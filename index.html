@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6c63ff">
+    <meta name="description" content="Gestão de Eventos e Calendário Cultural 2026 — SEMTUR São José de Ribamar">
+    <title>SEMTUR Cultural 2026</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236c63ff'/><text y='70' x='50' text-anchor='middle' font-size='55'>🎭</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg:        #0f1117;
+            --surface:   #181c27;
+            --surface2:  #1e2335;
+            --border:    #2a3050;
+            --accent:    #6c63ff;
+            --accent2:   #a78bfa;
+            --green:     #34d399;
+            --red:       #f87171;
+            --yellow:    #fbbf24;
+            --text:      #e2e8f0;
+            --muted:     #7c87a6;
+            --radius:    12px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* LOGIN */
+        #login-screen { display:none; }
+        .login-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:3rem 2.5rem; width:100%; max-width:400px; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,.5); }
+        .login-box .logo { font-family:'DM Serif Display',serif; font-size:1.8rem; color:var(--accent2); margin-bottom:.3rem; }
+        .login-box .sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+        .login-box input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:.85rem 1.1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; outline:none; transition:border .2s; margin-bottom:1rem; letter-spacing:.1em; }
+        .login-box input:focus { border-color:var(--accent); }
+        .login-error { color:var(--red); font-size:.85rem; margin-top:.5rem; display:none; }
+
+        /* HEADER */
+        #app { display:block; }
+        header { background:var(--surface); border-bottom:1px solid var(--border); padding:.8rem 1rem; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; flex-wrap:wrap; gap:.5rem; }
+        .header-title { font-family:'DM Serif Display',serif; font-size:1rem; color:var(--accent2); }
+        @media(min-width:768px){ .header-title { font-size:1.4rem; } }
+        .header-title span { color:var(--muted); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; margin-left:.5rem; }
+        .header-actions { display:flex; gap:.75rem; }
+        .btn { border:none; border-radius:var(--radius); padding:.5rem .8rem; font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; gap:.3rem; }
+        @media(min-width:768px){ .btn { padding:.6rem 1.2rem; font-size:.88rem; gap:.4rem; } }
+        .btn-add    { background:var(--accent); color:#fff; }
+        .btn-add:hover { background:var(--accent2); transform:translateY(-1px); }
+        .btn-export { background:var(--green); color:#0f1117; }
+        .btn-export:hover { filter:brightness(1.1); transform:translateY(-1px); }
+        .btn-logout { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+        .btn-install { background:linear-gradient(135deg,#6c63ff,#a78bfa); color:#fff; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(108,99,255,.4);} 70%{box-shadow:0 0 0 8px rgba(108,99,255,0);} }
+        .btn-logout:hover { color:var(--red); border-color:var(--red); }
+
+        /* CONTENT */
+        .content { padding:1rem; max-width:1400px; margin:0 auto; display:flex; flex-direction:column; height:calc(100vh - 65px); height:calc(-webkit-fill-available - 65px); min-height: 0; }
+
+        /* Área fixa (stats + nav + filtros) */
+        .fixed-top { flex-shrink:0; }
+
+        /* Área de scroll apenas dos eventos */
+        #events-list { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:.5rem; scroll-behavior:smooth; }
+
+        /* STATS */
+        .stats { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.9rem 1.4rem; flex:1; min-width:120px; }
+        .stat-card .val { font-family:'DM Serif Display',serif; font-size:1.8rem; color:var(--accent2); }
+        .stat-card .lbl { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+        .stat-split { display:flex; gap:1.2rem; align-items:flex-end; }
+        .stat-split .val-fixo { font-family:'DM Serif Display',serif; font-size:1.8rem; color:var(--green); }
+        .stat-split .val-var  { font-family:'DM Serif Display',serif; font-size:1.8rem; color:var(--yellow); }
+        .lbl-fixo { color:var(--green); }
+        .lbl-var  { color:var(--yellow); }
+
+        /* MÊS NAV */
+        .month-nav-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.2rem; margin-bottom:1.2rem; }
+        .month-nav-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.6rem; }
+        .month-nav-grid { display:grid; grid-template-columns:repeat(13,1fr); gap:.4rem; }
+        @media(max-width:900px){ .month-nav-grid { grid-template-columns:repeat(7,1fr); } }
+        @media(max-width:500px){ .month-nav-grid { grid-template-columns:repeat(4,1fr); } }
+        .mnav-btn { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.45rem .2rem; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; text-align:center; }
+        .mnav-btn:hover { border-color:var(--accent); color:var(--accent2); }
+        .mnav-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+        /* TOOLBAR */
+        .toolbar { display:flex; gap:.75rem; margin-bottom:1.2rem; flex-wrap:wrap; }
+        .toolbar input { flex:1; min-width:200px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.65rem 1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; outline:none; transition:border .2s; }
+        .toolbar input:focus { border-color:var(--accent); }
+        .toolbar select { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.65rem 1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; outline:none; cursor:pointer; }
+
+        /* MONTH GROUP */
+        .month-group { margin-bottom:2rem; scroll-margin-top:80px; }
+        .month-label { font-family:'DM Serif Display',serif; font-size:1.2rem; color:var(--accent2); border-bottom:1px solid var(--border); padding-bottom:.5rem; margin-bottom:.9rem; display:flex; align-items:center; justify-content:space-between; }
+        .month-count { font-family:'DM Sans',sans-serif; font-size:.78rem; color:var(--muted); background:var(--surface2); border-radius:20px; padding:.2rem .7rem; }
+
+        /* EVENT ROW */
+        .event-row { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.9rem 1.1rem; margin-bottom:.6rem; display:flex; align-items:center; gap:1rem; transition:border .2s,box-shadow .2s; }
+        .event-row:hover { border-color:var(--accent); box-shadow:0 4px 20px rgba(108,99,255,.1); }
+        .cat-badge { font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:.25rem .6rem; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+        .event-info { flex:1; min-width:0; }
+        .event-info .ev-date { font-size:.78rem; color:var(--muted); }
+        .event-info .ev-title { font-weight:600; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .event-info .ev-obj { font-size:.8rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .event-actions { display:flex; gap:.4rem; flex-shrink:0; }
+        .btn-edit,.btn-del,.btn-details { border:none; border-radius:8px; padding:.45rem .8rem; cursor:pointer; font-size:.8rem; font-weight:600; transition:all .2s; display:flex; align-items:center; gap:.3rem; }
+        .btn-details { background:rgba(52,211,153,.12); color:var(--green); }
+        .btn-details:hover { background:var(--green); color:#0f1117; }
+        .btn-edit { background:rgba(108,99,255,.15); color:var(--accent2); }
+        .btn-edit:hover { background:var(--accent); color:#fff; }
+        .btn-del  { background:rgba(248,113,113,.1); color:var(--red); }
+        .btn-del:hover  { background:var(--red); color:#fff; }
+
+        /* MODAL DETALHES */
+        #details-modal { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,.65); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9000; padding:1rem; }
+        #details-modal.open { display:flex; }
+        .details-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+        .details-box .det-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; }
+        .details-box .det-title { font-family:'DM Serif Display',serif; font-size:1.35rem; color:var(--accent2); line-height:1.3; }
+        .details-box .det-meta { display:flex; align-items:center; gap:.6rem; margin-top:.4rem; flex-wrap:wrap; }
+        .details-box .det-date { font-size:.82rem; color:var(--muted); }
+        .btn-close-det { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.45rem .9rem; color:var(--muted); cursor:pointer; font-size:.85rem; flex-shrink:0; transition:all .2s; }
+        .btn-close-det:hover { color:var(--red); border-color:var(--red); }
+        .det-divider { border:none; border-top:1px solid var(--border); margin:1rem 0; }
+        .det-section { margin-bottom:1.1rem; }
+        .det-section .det-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:.3rem; }
+        .det-section .det-value { font-size:.92rem; color:var(--text); line-height:1.6; }
+        .det-grid { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+        @media(max-width:500px){ .det-grid { grid-template-columns:1fr; } }
+        .empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); font-size:.95rem; }
+        .empty-state i { font-size:2.5rem; margin-bottom:.8rem; display:block; opacity:.4; }
+
+        /* CATEGORY COLORS */
+        .cat-religioso   { background:rgba(251,191,36,.15); color:#fbbf24; }
+        .cat-musica      { background:rgba(52,211,153,.15); color:#34d399; }
+        .cat-folclore    { background:rgba(251,146,60,.15); color:#fb923c; }
+        .cat-literatura  { background:rgba(129,140,248,.15); color:#818cf8; }
+        .cat-artes       { background:rgba(244,114,182,.15); color:#f472b6; }
+        .cat-civico      { background:rgba(56,189,248,.15); color:#38bdf8; }
+        .cat-diversidade { background:rgba(167,139,250,.15); color:#a78bfa; }
+        .cat-carnaval    { background:rgba(248,113,113,.15); color:#f87171; }
+        .cat-editais     { background:rgba(20,184,166,.15); color:#2dd4bf; }
+
+        /* MODAL */
+        .modal-overlay { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,.65); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9000; padding:1rem; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem; width:100%; max-width:580px; max-height:90vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+        .modal-box h2 { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--accent2); margin-bottom:1.2rem; display:flex; align-items:center; gap:.5rem; }
+        .form-group { margin-bottom:.9rem; }
+        .form-group label { display:block; font-size:.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+        .form-group input,.form-group select,.form-group textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.7rem .9rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; outline:none; transition:border .2s; resize:vertical; }
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--accent); }
+        .form-group textarea { min-height:65px; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .modal-actions { display:flex; gap:.75rem; margin-top:1.2rem; }
+        .btn-save { flex:1; background:var(--accent); color:#fff; border:none; border-radius:var(--radius); padding:.85rem; font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:600; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:.5rem; }
+        .btn-save:hover { background:var(--accent2); }
+        .btn-cancel-modal { background:var(--surface2); color:var(--muted); border:1px solid var(--border); border-radius:var(--radius); padding:.85rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:.9rem; cursor:pointer; transition:all .2s; }
+        .btn-cancel-modal:hover { color:var(--red); border-color:var(--red); }
+        .edit-banner { background:rgba(251,191,36,.12); border:1px solid var(--yellow); border-radius:8px; padding:.55rem .9rem; font-size:.82rem; color:var(--yellow); margin-bottom:1rem; display:none; align-items:center; gap:.5rem; }
+
+        /* CONFIRM MODAL */
+        #confirm-modal { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,.6); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9998; }
+        #confirm-modal.open { display:flex; }
+        .confirm-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:2rem; max-width:360px; width:90%; text-align:center; }
+        .confirm-box i { font-size:2rem; color:var(--red); margin-bottom:.8rem; }
+        .confirm-box h3 { font-size:1.1rem; margin-bottom:.5rem; }
+        .confirm-box p { color:var(--muted); font-size:.88rem; margin-bottom:1.5rem; }
+        .confirm-actions { display:flex; gap:.75rem; }
+        .btn-confirm-del { flex:1; background:var(--red); color:#fff; border:none; border-radius:8px; padding:.75rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:filter .2s; }
+        .btn-confirm-del:hover { filter:brightness(1.1); }
+        .btn-cancel-del { flex:1; background:var(--surface2); color:var(--muted); border:1px solid var(--border); border-radius:8px; padding:.75rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+        /* TOAST */
+        /* MODO EDIÇÃO */
+        .lock-btn { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:.6rem 1.2rem; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; gap:.4rem; color:var(--muted); }
+        .lock-btn.unlocked { background:rgba(52,211,153,.15); border-color:var(--green); color:var(--green); }
+        .lock-btn:hover { border-color:var(--accent2); color:var(--accent2); }
+
+        /* MODAL SENHA EDIÇÃO */
+        #pwd-modal { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(0,0,0,.7); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; z-index:9999; }
+        #pwd-modal.open { display:flex; }
+        .pwd-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem; width:100%; max-width:360px; text-align:center; }
+        .pwd-box i { font-size:2rem; color:var(--accent2); margin-bottom:.8rem; display:block; }
+        .pwd-box h3 { font-family:'DM Serif Display',serif; font-size:1.2rem; margin-bottom:.4rem; color:var(--accent2); }
+        .pwd-box p { color:var(--muted); font-size:.85rem; margin-bottom:1.2rem; }
+        .pwd-box input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:.75rem 1rem; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; outline:none; transition:border .2s; margin-bottom:.8rem; letter-spacing:.1em; text-align:center; }
+        .pwd-box input:focus { border-color:var(--accent); }
+        .pwd-error { color:var(--red); font-size:.82rem; margin-bottom:.8rem; display:none; }
+        .pwd-actions { display:flex; gap:.75rem; }
+        .btn-pwd-ok { flex:1; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:.75rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:filter .2s; }
+        .btn-pwd-ok:hover { filter:brightness(1.15); }
+        .btn-pwd-cancel { background:var(--surface2); color:var(--muted); border:1px solid var(--border); border-radius:8px; padding:.75rem 1.2rem; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+        #toast { position:fixed; bottom:2rem; right:2rem; background:var(--green); color:#0f1117; padding:.85rem 1.4rem; border-radius:var(--radius); font-weight:600; font-size:.9rem; box-shadow:0 8px 24px rgba(0,0,0,.3); z-index:9999; opacity:0; transform:translateY(1rem); transition:all .3s; pointer-events:none; display:flex; align-items:center; gap:.5rem; }
+        #toast.show { opacity:1; transform:translateY(0); }
+        #toast.error { background:var(--red); color:#fff; }
+
+        ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; } ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="logo">🎭 Portal Cultural</div>
+        <div class="sub">Gestão de Eventos e Calendário Cultural 2026 — SEMTUR</div>
+        <input type="password" id="pwd-input" placeholder="Senha de acesso" autocomplete="current-password">
+        <button class="btn btn-add" style="width:100%;justify-content:center;" onclick="doLogin()"><i class="fa-solid fa-lock-open"></i> Entrar</button>
+        <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
+        <div id="storage-warning" style="display:none;margin-top:.8rem;padding:.6rem;background:rgba(251,191,36,.15);border:1px solid #fbbf24;border-radius:8px;font-size:.78rem;color:#fbbf24;">
+            ⚠️ Modo navegação privada detectado. Os eventos serão salvos apenas durante esta sessão.
+        </div>
+    </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+    <header>
+        <div class="header-title">Gestão de Eventos e Calendário Cultural 2026 — SEMTUR <span>/ Painel Admin</span></div>
+        <div class="header-actions">
+            <button class="btn btn-install" id="btn-install" style="display:none;" onclick="installPWA()">
+                <i class="fa-solid fa-download"></i> Instalar App
+            </button>
+            <button class="lock-btn" id="lock-btn" onclick="toggleLock()" title="Modo de Edição">
+                <i class="fa-solid fa-lock" id="lock-icon"></i> <span id="lock-label">Edição Bloqueada</span>
+            </button>
+            <button class="btn btn-add" onclick="requireUnlock(function(){ openModal(); })" ><i class="fa-solid fa-plus"></i> Novo Evento</button>
+            <button class="btn btn-export" onclick="exportPortal()"><i class="fa-solid fa-file-export"></i> Exportar Portal</button>
+            <button class="btn btn-logout" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+
+        </div>
+    </header>
+
+    <div class="content">
+        <div class="fixed-top">
+        <div class="stats" id="stats-bar"></div>
+
+        <!-- Navegação por mês -->
+        <div class="month-nav-wrap">
+            <div class="month-nav-label">Navegar pelo mês</div>
+            <div class="month-nav-grid">
+                <button class="mnav-btn active" data-m="0" onclick="selectMonth(0)">Todos</button>
+                <button class="mnav-btn" data-m="1"  onclick="selectMonth(1)">Jan</button>
+                <button class="mnav-btn" data-m="2"  onclick="selectMonth(2)">Fev</button>
+                <button class="mnav-btn" data-m="3"  onclick="selectMonth(3)">Mar</button>
+                <button class="mnav-btn" data-m="4"  onclick="selectMonth(4)">Abr</button>
+                <button class="mnav-btn" data-m="5"  onclick="selectMonth(5)">Mai</button>
+                <button class="mnav-btn" data-m="6"  onclick="selectMonth(6)">Jun</button>
+                <button class="mnav-btn" data-m="7"  onclick="selectMonth(7)">Jul</button>
+                <button class="mnav-btn" data-m="8"  onclick="selectMonth(8)">Ago</button>
+                <button class="mnav-btn" data-m="9"  onclick="selectMonth(9)">Set</button>
+                <button class="mnav-btn" data-m="10" onclick="selectMonth(10)">Out</button>
+                <button class="mnav-btn" data-m="11" onclick="selectMonth(11)">Nov</button>
+                <button class="mnav-btn" data-m="12" onclick="selectMonth(12)">Dez</button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="toolbar">
+            <input type="text" id="search-admin" placeholder="🔍  Buscar evento..." oninput="renderList()">
+            <select id="filter-cat" onchange="renderList()">
+                <option value="">Todas as categorias</option>
+                <option value="religioso">Religioso</option>
+                <option value="musica">Música</option>
+                <option value="folclore">Folclore</option>
+                <option value="literatura">Literatura</option>
+                <option value="artes">Artes</option>
+                <option value="civico">Cívico</option>
+                <option value="diversidade">Diversidade</option>
+                <option value="carnaval">Carnaval</option>
+                <option value="editais">Editais e Chamadas</option>
+            </select>
+        </div>
+
+        </div><!-- /fixed-top -->
+
+        <div id="events-list"></div>
+    </div>
+</div>
+
+<!-- MODAL ADICIONAR/EDITAR -->
+<div class="modal-overlay" id="event-modal">
+    <div class="modal-box">
+        <h2><i class="fa-solid fa-calendar-plus"></i> <span id="modal-title">Novo Evento</span></h2>
+        <div class="edit-banner" id="edit-banner"><i class="fa-solid fa-pen-to-square"></i> Modo edição ativo</div>
+        <input type="hidden" id="edit-id">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Mês</label>
+                <select id="f-month">
+                    <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                    <option value="3">Março</option><option value="4">Abril</option>
+                    <option value="5">Maio</option><option value="6">Junho</option>
+                    <option value="7">Julho</option><option value="8">Agosto</option>
+                    <option value="9">Setembro</option><option value="10">Outubro</option>
+                    <option value="11">Novembro</option><option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Data(s)</label>
+                <input type="text" id="f-date" placeholder="Ex: 19/03">
+            </div>
+        </div>
+        <div class="form-group"><label>Nome do Evento</label><input type="text" id="f-title" placeholder="Ex: Dia do Artesão"></div>
+        <div class="form-group">
+            <label>Categoria</label>
+            <select id="f-category">
+                <option value="religioso">Religioso</option><option value="musica">Música</option>
+                <option value="folclore">Folclore</option><option value="literatura">Literatura</option>
+                <option value="artes">Artes</option><option value="civico">Cívico</option>
+                <option value="diversidade">Diversidade</option><option value="carnaval">Carnaval</option>
+                <option value="editais">Editais e Chamadas</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tipo de Evento</label>
+            <select id="f-tipo">
+                <option value="fixo">📅 Fixo — data recorrente/oficial</option>
+                <option value="variavel">📌 Variável — data definida pelo planejamento</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Objetivo</label><textarea id="f-objetivo" placeholder="Descreva o objetivo do evento..."></textarea></div>
+        <div class="form-group"><label>Atividades</label><textarea id="f-atividades" placeholder="Liste as atividades previstas..."></textarea></div>
+        <div class="form-group"><label>Metodologia</label><textarea id="f-metodologia" placeholder="Como o evento será organizado..."></textarea></div>
+        <div class="form-group"><label>Público-Alvo</label><input type="text" id="f-publico" placeholder="Ex: Estudantes, comunidade em geral"></div>
+        <div class="form-group"><label>Responsáveis</label><input type="text" id="f-responsaveis" placeholder="Ex: Coordenação de Cultura + Escolas"></div>
+        <div class="form-group"><label>Parceiros</label><input type="text" id="f-parceiros" placeholder="Ex: Associações culturais, CMPC"></div>
+        <div class="form-group"><label>Recursos Necessários</label><textarea id="f-recursos" placeholder="Ex: Som, palco, transporte..."></textarea></div>
+        <div class="form-group"><label>Resultados Esperados</label><textarea id="f-resultados" placeholder="O que espera alcançar..."></textarea></div>
+        <div class="form-group"><label>Indicadores de Impacto</label><textarea id="f-indicadores" placeholder="Ex: Nº de participantes, público estimado..."></textarea></div>
+        <div class="modal-actions">
+            <button class="btn-cancel-modal" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+            <button class="btn-save" onclick="saveEvent()"><i class="fa-solid fa-floppy-disk"></i> <span id="save-label">Salvar Evento</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DETALHES -->
+<div id="details-modal">
+    <div class="details-box">
+        <div class="det-header">
+            <div>
+                <div class="det-title" id="det-title">—</div>
+                <div class="det-meta">
+                    <span class="cat-badge" id="det-badge"></span>
+                    <span class="det-date" id="det-date"></span>
+                </div>
+            </div>
+            <button class="btn-close-det" onclick="closeDetails()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+        </div>
+        <hr class="det-divider">
+        <div class="det-section">
+            <div class="det-label">🎯 Objetivo</div>
+            <div class="det-value" id="det-objetivo"></div>
+        </div>
+        <div class="det-section">
+            <div class="det-label">📋 Atividades</div>
+            <div class="det-value" id="det-atividades"></div>
+        </div>
+        <div class="det-section">
+            <div class="det-label">⚙️ Metodologia</div>
+            <div class="det-value" id="det-metodologia"></div>
+        </div>
+        <hr class="det-divider">
+        <div class="det-grid">
+            <div class="det-section">
+                <div class="det-label">👥 Público-Alvo</div>
+                <div class="det-value" id="det-publico"></div>
+            </div>
+            <div class="det-section">
+                <div class="det-label">🤝 Parceiros</div>
+                <div class="det-value" id="det-parceiros"></div>
+            </div>
+            <div class="det-section">
+                <div class="det-label">👤 Responsáveis</div>
+                <div class="det-value" id="det-responsaveis"></div>
+            </div>
+            <div class="det-section">
+                <div class="det-label">🛠️ Recursos Necessários</div>
+                <div class="det-value" id="det-recursos"></div>
+            </div>
+        </div>
+        <hr class="det-divider">
+        <div class="det-section">
+            <div class="det-label">✅ Resultados Esperados</div>
+            <div class="det-value" id="det-resultados"></div>
+        </div>
+        <div class="det-section">
+            <div class="det-label">📊 Indicadores de Impacto</div>
+            <div class="det-value" id="det-indicadores"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div id="confirm-modal">
+    <div class="confirm-box">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <h3>Excluir evento?</h3>
+        <p id="confirm-text">Esta ação não pode ser desfeita.</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel-del" onclick="closeConfirm()">Cancelar</button>
+            <button class="btn-confirm-del" onclick="confirmDelete()">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SENHA EDIÇÃO -->
+<div id="pwd-modal">
+    <div class="pwd-box">
+        <i class="fa-solid fa-lock-open"></i>
+        <h3>Modo de Edição</h3>
+        <p>Digite a senha para liberar edição e exclusão de eventos.</p>
+        <input type="password" id="edit-pwd-input" placeholder="••••••••••">
+        <div class="pwd-error" id="pwd-error">Senha incorreta. Tente novamente.</div>
+        <div class="pwd-actions">
+            <button class="btn-pwd-cancel" onclick="closePwdModal()">Cancelar</button>
+            <button class="btn-pwd-ok" onclick="confirmEditPwd()"><i class="fa-solid fa-unlock"></i> Desbloquear</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><i class="fa-solid fa-circle-check"></i><span id="toast-msg"></span></div>
+
+<script>
+const SENHA = 'cultura2026';
+const SENHA_EDICAO = '168000';
+const STORAGE_KEY = 'portal_cultural_eventos';
+const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const CATEGORY_ICONS = { religioso:'fa-hands-praying', musica:'fa-music', folclore:'fa-hat-wizard', literatura:'fa-book-open', artes:'fa-palette', civico:'fa-flag', diversidade:'fa-globe', carnaval:'fa-masks-theater', editais:'fa-file-contract' };
+
+/* AUTH */
+function doLogin() {
+    if (document.getElementById('pwd-input').value === SENHA) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        if (!_storageOk) {
+            document.getElementById('storage-warning').style.display = 'block';
+            showToast('⚠️ Modo privado: dados não serão salvos permanentemente.', true);
+        }
+        mergeDefaultEvents();
+        renderList(); renderStats();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('pwd-input').value = '';
+        document.getElementById('pwd-input').focus();
+    }
+}
+document.getElementById('pwd-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+function doLogout() {
+    if (confirm('Deseja realmente sair do sistema?')) {
+        window.close();
+        // Caso o navegador bloqueie o fechamento
+        setTimeout(function() {
+            document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;flex-direction:column;gap:1rem;font-family:DM Sans,sans-serif;">' +
+                '<div style="font-size:3rem;">👋</div>' +
+                '<div style="color:#a78bfa;font-size:1.3rem;font-weight:700;">Sessão encerrada</div>' +
+                '<div style="color:#7c87a6;font-size:.9rem;">Pode fechar esta aba com segurança.</div>' +
+                '<button onclick="location.reload()" style="margin-top:1rem;background:#6c63ff;color:#fff;border:none;border-radius:10px;padding:.7rem 1.5rem;font-size:.9rem;cursor:pointer;">↩ Voltar ao sistema</button>' +
+            '</div>';
+        }, 300);
+    }
+}
+
+/* STORAGE — com fallback em memória para iOS Safari */
+let _memoryStore = null; // fallback quando localStorage não está disponível
+let _storageOk = true;
+
+function _testStorage() {
+    try {
+        localStorage.setItem('__test__', '1');
+        localStorage.removeItem('__test__');
+        _storageOk = true;
+    } catch(e) {
+        _storageOk = false;
+        console.warn('[SEMTUR] localStorage indisponível — usando memória.');
+    }
+}
+
+function getEvents() {
+    try {
+        if (_storageOk) {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : getDefaultEvents();
+        }
+    } catch(e) { _storageOk = false; }
+    // Fallback: usar memória
+    if (!_memoryStore) _memoryStore = getDefaultEvents();
+    return _memoryStore;
+}
+
+function setEvents(ev) {
+    try {
+        if (_storageOk) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ev));
+            return;
+        }
+    } catch(e) { _storageOk = false; }
+    // Fallback: salvar em memória
+    _memoryStore = ev;
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+/* MODAL */
+function openModal(id) {
+    document.getElementById('edit-id').value = '';
+    ['f-date','f-title','f-objetivo','f-atividades','f-metodologia','f-publico','f-responsaveis','f-parceiros','f-recursos','f-resultados','f-indicadores'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('f-tipo').value = 'fixo';
+    document.getElementById('f-month').value = '1';
+    document.getElementById('f-category').value = 'religioso';
+    document.getElementById('modal-title').textContent = 'Novo Evento';
+    document.getElementById('save-label').textContent = 'Salvar Evento';
+    document.getElementById('edit-banner').style.display = 'none';
+    if (id) {
+        const ev = getEvents().find(e => e.id === id);
+        if (ev) {
+            document.getElementById('edit-id').value      = ev.id;
+            document.getElementById('f-month').value      = ev.month;
+            document.getElementById('f-date').value       = ev.date;
+            document.getElementById('f-title').value      = ev.title;
+            document.getElementById('f-category').value   = ev.category;
+            document.getElementById('f-tipo').value       = ev.tipo || 'fixo';
+            document.getElementById('f-objetivo').value   = ev.objetivo;
+            document.getElementById('f-atividades').value = ev.atividades;
+            document.getElementById('f-metodologia').value= ev.metodologia;
+            document.getElementById('f-publico').value    = ev.publico;
+            document.getElementById('f-responsaveis').value= ev.responsaveis;
+            document.getElementById('f-parceiros').value  = ev.parceiros;
+            document.getElementById('f-recursos').value   = ev.recursos;
+            document.getElementById('f-resultados').value = ev.resultados;
+            document.getElementById('f-indicadores').value= ev.indicadores;
+            document.getElementById('modal-title').textContent = 'Editar Evento';
+            document.getElementById('save-label').textContent  = 'Atualizar';
+            document.getElementById('edit-banner').style.display = 'flex';
+        }
+    }
+    document.getElementById('event-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('event-modal').classList.remove('open'); }
+
+/* SAVE */
+function saveEvent() {
+    const id    = document.getElementById('edit-id').value;
+    const month = parseInt(document.getElementById('f-month').value);
+    const date  = document.getElementById('f-date').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    const cat   = document.getElementById('f-category').value;
+    const tipo  = document.getElementById('f-tipo').value;
+    const obj   = document.getElementById('f-objetivo').value.trim();
+    if (!date || !title || !obj) { showToast('Preencha: Data, Nome e Objetivo.', true); return; }
+    const events = getEvents();
+    const ev = { id: id || genId(), month, date, title, category:cat, tipo, objetivo:obj,
+        atividades:document.getElementById('f-atividades').value.trim(),
+        metodologia:document.getElementById('f-metodologia').value.trim(),
+        publico:document.getElementById('f-publico').value.trim(),
+        responsaveis:document.getElementById('f-responsaveis').value.trim(),
+        parceiros:document.getElementById('f-parceiros').value.trim(),
+        recursos:document.getElementById('f-recursos').value.trim(),
+        resultados:document.getElementById('f-resultados').value.trim(),
+        indicadores:document.getElementById('f-indicadores').value.trim() };
+    if (id) { const i = events.findIndex(e=>e.id===id); if(i!==-1) events[i]=ev; showToast('Evento atualizado!'); }
+    else { events.push(ev); showToast('Evento salvo!'); }
+    setEvents(events); closeModal(); renderList(); renderStats();
+}
+
+/* DELETE */
+let pendingDeleteId = null;
+function deleteEvent(id) {
+    const ev = getEvents().find(e=>e.id===id);
+    document.getElementById('confirm-text').textContent = '"'+ev?.title+'" será removido permanentemente.';
+    pendingDeleteId = id;
+    document.getElementById('confirm-modal').classList.add('open');
+}
+function confirmDelete() {
+    if (!pendingDeleteId) return;
+    setEvents(getEvents().filter(e=>e.id!==pendingDeleteId));
+    closeConfirm(); renderList(); renderStats(); showToast('Evento excluído.');
+}
+function showDetails(id) {
+    const ev = getEvents().find(e => e.id === id);
+    if (!ev) return;
+    const icon = CATEGORY_ICONS[ev.category] || 'fa-star';
+    document.getElementById('det-title').textContent       = ev.title;
+    document.getElementById('det-date').textContent        = ev.date + ' — ' + MESES[ev.month] + ' · ' + ((ev.tipo||'fixo')==='fixo'?'📅 Fixo':'📌 Variável');
+    document.getElementById('det-badge').className         = 'cat-badge cat-' + ev.category;
+    document.getElementById('det-badge').innerHTML         = '<i class="fa-solid ' + icon + '"></i> ' + ev.category;
+    document.getElementById('det-objetivo').textContent    = ev.objetivo     || '—';
+    document.getElementById('det-atividades').textContent  = ev.atividades   || '—';
+    document.getElementById('det-metodologia').textContent = ev.metodologia  || '—';
+    document.getElementById('det-publico').textContent     = ev.publico      || '—';
+    document.getElementById('det-parceiros').textContent   = ev.parceiros    || '—';
+    document.getElementById('det-responsaveis').textContent= ev.responsaveis || '—';
+    document.getElementById('det-recursos').textContent    = ev.recursos     || '—';
+    document.getElementById('det-resultados').textContent  = ev.resultados   || '—';
+    document.getElementById('det-indicadores').textContent = ev.indicadores  || '—';
+    document.getElementById('details-modal').classList.add('open');
+}
+function closeDetails() { document.getElementById('details-modal').classList.remove('open'); }
+
+// Fechar modal de detalhes clicando fora
+document.getElementById('details-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDetails();
+});
+
+/* ============================================================
+   CONTROLE DE BLOQUEIO DE EDIÇÃO
+============================================================ */
+let editUnlocked = false;
+let pendingAction = null;
+
+function toggleLock() {
+    if (editUnlocked) {
+        // Bloquear novamente
+        editUnlocked = false;
+        updateLockUI();
+        showToast('Modo de edição bloqueado.');
+    } else {
+        // Pedir senha para desbloquear
+        openPwdModal(null);
+    }
+}
+
+function requireUnlock(action) {
+    if (editUnlocked) {
+        action();
+    } else {
+        openPwdModal(action);
+    }
+}
+
+function openPwdModal(action) {
+    pendingAction = action;
+    document.getElementById('edit-pwd-input').value = '';
+    document.getElementById('pwd-error').style.display = 'none';
+    document.getElementById('pwd-modal').classList.add('open');
+    setTimeout(() => document.getElementById('edit-pwd-input').focus(), 100);
+}
+
+function closePwdModal() {
+    document.getElementById('pwd-modal').classList.remove('open');
+    pendingAction = null;
+}
+
+function confirmEditPwd() {
+    const pwd = document.getElementById('edit-pwd-input').value;
+    if (pwd === SENHA_EDICAO) {
+        editUnlocked = true;
+        updateLockUI();
+        closePwdModal();
+        showToast('Modo de edição desbloqueado! ✓');
+        if (pendingAction) { pendingAction(); pendingAction = null; }
+    } else {
+        document.getElementById('pwd-error').style.display = 'block';
+        document.getElementById('edit-pwd-input').value = '';
+        document.getElementById('edit-pwd-input').focus();
+    }
+}
+
+function updateLockUI() {
+    const btn   = document.getElementById('lock-btn');
+    const icon  = document.getElementById('lock-icon');
+    const label = document.getElementById('lock-label');
+    if (editUnlocked) {
+        btn.classList.add('unlocked');
+        icon.className  = 'fa-solid fa-lock-open';
+        label.textContent = 'Edição Liberada';
+    } else {
+        btn.classList.remove('unlocked');
+        icon.className  = 'fa-solid fa-lock';
+        label.textContent = 'Edição Bloqueada';
+    }
+}
+
+// Enter no campo de senha do modal de edição
+document.getElementById('edit-pwd-input').addEventListener('keydown', e => { if(e.key==='Enter') confirmEditPwd(); });
+// Fechar clicando fora
+document.getElementById('pwd-modal').addEventListener('click', function(e) { if(e.target===this) closePwdModal(); });
+
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); pendingDeleteId=null; }
+
+/* NAVIGATION */
+let activeMonth = 0;
+function selectMonth(m) {
+    activeMonth = m;
+    // Atualiza visual dos botões
+    document.querySelectorAll('.mnav-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.m)===m));
+    // Filtra a lista e atualiza stats
+    renderStats();
+    renderList();
+    // Volta ao topo da lista
+    document.getElementById('events-list').scrollTop = 0;
+}
+
+/* RENDER */
+function renderStats() {
+    const allEvents = getEvents();
+    const mesLabel  = activeMonth > 0 ? MESES[activeMonth] : 'Geral';
+
+    // Filtrar pelo mês ativo (ou todos)
+    const evs = activeMonth > 0 ? allEvents.filter(e => e.month == activeMonth) : allEvents;
+
+    // Fixos vs Variáveis
+    const fixos = evs.filter(e => (e.tipo || 'fixo') === 'fixo').length;
+    const variaveis = evs.filter(e => e.tipo === 'variavel').length;
+
+    // Categorias únicas do mês
+    const cats = [...new Set(evs.map(e => e.category))].length;
+
+    document.getElementById('stats-bar').innerHTML = `
+        <div class="stat-card">
+            <div class="val">${evs.length}</div>
+            <div class="lbl">Eventos em ${mesLabel}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-split">
+                <div>
+                    <div class="val-fixo">${fixos}</div>
+                    <div class="lbl-fixo" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Fixos</div>
+                </div>
+                <div>
+                    <div class="val-var">${variaveis}</div>
+                    <div class="lbl-var" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Variáveis</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="val">${cats}</div>
+            <div class="lbl">Categorias em ${mesLabel}</div>
+        </div>
+        <div class="stat-card">
+            <div class="val">${[...new Set(allEvents.map(e=>e.month))].length}</div>
+            <div class="lbl">Meses com Eventos</div>
+        </div>`;
+}
+
+function renderList() {
+    const search = document.getElementById('search-admin').value.toLowerCase();
+    const catF   = document.getElementById('filter-cat').value;
+    let events = getEvents();
+    // Filtrar pelo mês ativo (0 = todos os meses)
+    if (activeMonth > 0) events = events.filter(e => e.month == activeMonth);
+    if (catF)   events = events.filter(e => e.category === catF);
+    if (search) events = events.filter(e => e.title.toLowerCase().includes(search) || e.objetivo.toLowerCase().includes(search) || e.date.includes(search));
+    events.sort((a,b) => a.month!==b.month ? a.month-b.month : a.date.localeCompare(b.date));
+    const container = document.getElementById('events-list');
+    if (events.length === 0) { container.innerHTML='<div class="empty-state"><i class="fa-regular fa-calendar-xmark"></i>Nenhum evento encontrado.</div>'; return; }
+    const grouped = {};
+    events.forEach(e => { if(!grouped[e.month]) grouped[e.month]=[]; grouped[e.month].push(e); });
+    let html = '';
+    Object.keys(grouped).sort((a,b)=>a-b).forEach(m => {
+        const list = grouped[m];
+        html += `<div class="month-group" data-month="${m}"><div class="month-label">${MESES[m]}<span class="month-count">${list.length} evento${list.length>1?'s':''}</span></div>`;
+        list.forEach(e => {
+            const icon = CATEGORY_ICONS[e.category]||'fa-star';
+            html += `<div class="event-row">
+                <span class="cat-badge cat-${e.category}"><i class="fa-solid ${icon}"></i> ${e.category}</span>
+                <div class="event-info">
+                    <div class="ev-date">${e.date} <span style="font-size:.68rem;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;background:${(e.tipo||"fixo")==="fixo"?"rgba(52,211,153,.15)":"rgba(251,191,36,.15)"};color:${(e.tipo||"fixo")==="fixo"?"#34d399":"#fbbf24"}">${(e.tipo||"fixo")==="fixo"?"📅 Fixo":"📌 Variável"}</span></div>
+                    <div class="ev-title">${e.title}</div>
+                    <div class="ev-obj">${e.objetivo}</div>
+                </div>
+                <div class="event-actions">
+                    <button class="btn-details" onclick="showDetails('${e.id}')"><i class="fa-solid fa-eye"></i> Detalhes</button>
+                    <button class="btn-edit" onclick="requireUnlock(function(){ openModal('${e.id}'); })"><i class="fa-solid fa-pen"></i> Editar</button>
+                    <button class="btn-del"  onclick="requireUnlock(function(){ deleteEvent('${e.id}'); })"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    });
+    container.innerHTML = html;
+}
+
+/* TOAST */
+function showToast(msg, isError=false) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.toggle('error', isError);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* EXPORT */
+function exportPortal() {
+    const events = getEvents();
+    const grouped = {};
+    for (let m=1;m<=12;m++) grouped[m]=[];
+    events.forEach(e => { if(grouped[e.month]) grouped[e.month].push(e); });
+    Object.keys(grouped).forEach(m => grouped[m].sort((a,b)=>a.date.localeCompare(b.date)));
+    const monthIds=['','janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    let sectionsHtml='';
+    for (let m=1;m<=12;m++){
+        const evList=grouped[m]; if(evList.length===0) continue;
+        let cardsHtml='';
+        evList.forEach(e=>{
+            const ico=CATEGORY_ICONS[e.category]||'fa-star';
+            const raw=e.date.replace(/\s/g,'').split('a')[0].split('e')[0].trim();
+            const pts=raw.split('/');
+            const gcDate=pts.length===2?'2026-'+String(pts[1]).padStart(2,'0')+'-'+String(pts[0]).padStart(2,'0'):'2026-'+String(m).padStart(2,'0')+'-01';
+            cardsHtml+=`\n<div class="bg-white p-6 rounded-xl shadow-lg event-card" data-category="${e.category}"><div><div class="event-title"><i class="fa-solid ${ico} text-purple-700"></i><h3 class="font-bold text-xl text-purple-700 mb-2">${e.date} - ${e.title}</h3></div><p class="mb-3"><strong class="text-gray-700">Objetivo:</strong> ${e.objetivo}</p><p><strong class="text-gray-700">Atividades:</strong> ${e.atividades}</p></div><details class="mt-4"><summary class="font-semibold text-indigo-600 hover:underline cursor-pointer">Ver Mais Detalhes</summary><div class="mt-2 text-sm text-gray-600 border-t pt-2 space-y-1">${e.metodologia?'<p><strong>Metodologia:</strong> '+e.metodologia+'</p>':''}${e.publico?'<p><strong>Público-Alvo:</strong> '+e.publico+'</p>':''}${e.responsaveis?'<p><strong>Responsáveis:</strong> '+e.responsaveis+'</p>':''}${e.parceiros?'<p><strong>Parceiros:</strong> '+e.parceiros+'</p>':''}${e.recursos?'<p><strong>Recursos Necessários:</strong> '+e.recursos+'</p>':''}${e.resultados?'<p><strong>Resultados Esperados:</strong> '+e.resultados+'</p>':''}${e.indicadores?'<p><strong>Indicadores de Impacto:</strong> '+e.indicadores+'</p>':''}<div class="mt-4 photo-gallery"><h4 class="font-semibold mb-2 text-gray-700">Galeria de Fotos</h4><div class="grid grid-cols-2 gap-2"><img src="https://placehold.co/300x200/e0e7ff/4f46e5?text=Foto+1" alt="Foto 1" class="rounded-md object-cover"><img src="https://placehold.co/300x200/e0e7ff/4f46e5?text=Foto+2" alt="Foto 2" class="rounded-md object-cover"></div></div><button onclick="addToCalendar('${e.title.replace(/'/g,"\\'")}','${gcDate}','${e.objetivo.replace(/'/g,"\\'")}') " class="mt-4 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 action-btn"><i class="fa-solid fa-calendar-plus"></i>Adicionar à Agenda</button></div></details></div>`;
+        });
+        sectionsHtml+=`\n<section id="${monthIds[m]}" class="month-section"><h2 class="text-3xl font-bold mb-6 border-l-4 border-indigo-500 pl-4">${MESES[m]}</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${cardsHtml}\n</div></section>`;
+    }
+    const cats=[...new Set(events.map(e=>e.category))];
+    const catBtns=cats.map(c=>'<button class="filter-btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg" data-category="'+c+'">'+c.charAt(0).toUpperCase()+c.slice(1)+'</button>').join('\n');
+    const portalHtml=`<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n<meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">\n<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n<title>Gestão de Eventos e Calendário Cultural 2026 — SEMTUR - São José de Ribamar</title>\n<script src="https://cdn.tailwindcss.com"><\/script>\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">\n<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">\n<style>html{scroll-behavior:smooth}body{font-family:'Poppins',sans-serif}.month-section{scroll-margin-top:390px}@media(max-width:768px){.month-section{scroll-margin-top:480px}}details>summary{cursor:pointer;list-style-type:none}details>summary::-webkit-details-marker{display:none}details>summary::before{content:'▶';margin-right:.5rem;display:inline-block;transition:transform .2s}details[open]>summary::before{transform:rotate(90deg)}.gradient-bg{background:linear-gradient(135deg,#4F46E5,#9333EA)}.month-nav a,.filter-btn,.action-btn{transition:all .2s ease-in-out}.month-nav a:hover,.filter-btn:hover,.action-btn:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.1)}.filter-btn.active{background-color:#4F46E5;color:white;transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.1)}.event-card{transition:transform .3s ease,box-shadow .3s ease;display:flex;flex-direction:column}.event-card:hover{transform:scale(1.02);box-shadow:0 10px 20px rgba(0,0,0,.15)}.event-card>div:first-child{flex-grow:1}.event-title{display:flex;align-items:flex-start;gap:.75rem}.event-title i{margin-top:6px}#toast{position:fixed;bottom:2rem;right:2rem;background:#4F46E5;color:white;padding:1rem 1.5rem;border-radius:.75rem;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9999;opacity:0;transform:translateY(1rem);transition:all .3s ease;pointer-events:none}#toast.show{opacity:1;transform:translateY(0)}@media print{body *{visibility:hidden}#print-area,#print-area *{visibility:visible}#print-area{position:absolute;left:0;top:0;width:100%}header,.sticky,footer,#print-button-container,.action-btn,.photo-gallery{display:none!important}main{padding:0!important}.event-card{box-shadow:none!important;border:1px solid #ccc;page-break-inside:avoid}.month-section{scroll-margin-top:0!important}h2{margin-top:2rem}.grid{display:block!important}.event-card{margin-bottom:1rem}}<\/style>\n<\/head>\n<body class="bg-gray-100 text-gray-800">\n<div id="toast"><i class="fa-solid fa-calendar-check mr-2"><\/i><span id="toast-msg"><\/span><\/div>\n<header class="gradient-bg text-white p-8 text-center shadow-lg">\n<h1 class="text-4xl md:text-5xl font-bold mb-2">Gestão de Eventos e Calendário Cultural 2026 — SEMTUR<\/h1>\n<p class="text-xl md:text-2xl font-light">São José de Ribamar - Cidade de Fé, Tradição e Cultura<\/p>\n<\/header>\n<main class="w-full px-4 md:px-8 py-8">\n<div id="print-button-container" class="max-w-7xl mx-auto mb-4 flex justify-end"><button onclick="window.print()" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 action-btn"><i class="fa-solid fa-print"><\/i> Imprimir / Gerar PDF<\/button><\/div>\n<div id="print-area">\n<div class="sticky top-2 z-10 max-w-7xl mx-auto space-y-4 mb-10">\n<section class="bg-white p-6 rounded-xl shadow-md"><h3 class="text-xl font-bold text-center mb-4 text-purple-600">Pesquisar e Filtrar Eventos<\/h3><div class="flex flex-col md:flex-row gap-4 mb-4"><input type="text" id="search-input" placeholder="Pesquisar por nome do evento..." class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><\/div><div id="category-filters" class="flex flex-wrap justify-center gap-2"><button class="filter-btn active bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg" data-category="all">Todos<\/button>\n${catBtns}<\/div><\/section>\n<nav class="bg-white p-4 rounded-xl shadow-md"><h3 class="text-xl font-bold text-center mb-4 text-purple-600">Navegue pelos Meses<\/h3><div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2 text-center month-nav">${monthIds.slice(1).map((id,i)=>'<a href="#'+id+'" class="bg-indigo-100 text-indigo-800 font-semibold p-2 rounded-lg hover:bg-indigo-200">'+MESES[i+1].slice(0,3)+'<\/a>').join('')}<\/div><\/nav>\n<\/div>\n<div id="events-container" class="space-y-16 max-w-7xl mx-auto"><p id="no-results" class="text-center text-xl text-gray-500 font-semibold hidden">Nenhum evento encontrado.<\/p>${sectionsHtml}<\/div><\/div><\/main>\n<footer class="gradient-bg text-white text-center py-6 mt-12"><p class="font-semibold">Gestão de Eventos e Calendário Cultural 2026 — SEMTUR<\/p><p class="text-sm opacity-80 mt-1">Cidade de Fé, Tradição e Cultura<\/p><\/footer>\n<script>function addToCalendar(title,dateStr,details){const p=dateStr.split('-'),d=p.join('');const e=new Date(dateStr);e.setDate(e.getDate()+1);const ed=e.toISOString().split('T')[0].replace(/-/g,'');const u=new URLSearchParams({action:'TEMPLATE',text:title,dates:d+'/'+ed,details:details,location:'São José de Ribamar, MA'});window.open('https://calendar.google.com/calendar/render?'+u,'_blank');const t=document.getElementById('toast');document.getElementById('toast-msg').textContent='"'+title+'" adicionado!';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}const filterBtns=document.querySelectorAll('.filter-btn');filterBtns.forEach(btn=>btn.addEventListener('click',()=>{filterBtns.forEach(b=>{b.classList.remove('active','bg-indigo-600','text-white');b.classList.add('bg-gray-200','text-gray-800');});btn.classList.add('active','bg-indigo-600','text-white');btn.classList.remove('bg-gray-200','text-gray-800');applyFilters(true);}));document.getElementById('search-input').addEventListener('input',()=>applyFilters(false));function applyFilters(scroll){const cat=document.querySelector('.filter-btn.active')?.dataset.category||'all';const q=document.getElementById('search-input').value.toLowerCase();let any=false,first=null;document.querySelectorAll('.event-card').forEach(c=>{const m=cat==='all'||c.dataset.category.includes(cat);const s=!q||c.textContent.toLowerCase().includes(q);c.style.display=(m&&s)?'flex':'none';if(m&&s)any=true;});document.querySelectorAll('.month-section').forEach(sec=>{const v=sec.querySelectorAll('.event-card[style="display: flex;"]').length>0;sec.style.display=v?'':'none';if(v&&!first)first=sec;});document.getElementById('no-results').classList.toggle('hidden',any);if(scroll&&first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'start'}),50);}<\/script>\n<\/body>\n<\/html>`;
+    const blob=new Blob([portalHtml],{type:'text/html'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='portal_cultural_2026.html';a.click();
+    showToast('Portal exportado com sucesso!');
+}
+
+/* MERGE + DEFAULTS */
+function mergeDefaultEvents() {
+    const defaults = getDefaultEvents(true);
+    let stored = getEvents();
+    // Se ainda não tem eventos, usar os padrões
+    if (!stored || stored.length === 0) {
+        setEvents(defaults);
+        return;
+    }
+    let added = 0;
+    defaults.forEach(def => {
+        const exists = stored.some(e => e.title.trim().toLowerCase()===def.title.trim().toLowerCase() && e.month===def.month);
+        if (!exists) { def.id=def.id||genId(); stored.push(def); added++; }
+    });
+    if (added > 0) setEvents(stored);
+}
+
+function getDefaultEvents(onlyReturn=false) {
+    const ev = [
+        {month:1,date:'06/01',title:'Dia de Reis / Queimação de Palhinhas',category:'folclore',tipo:'fixo',objetivo:'Valorizar a tradição popular e fortalecer a memória cultural da cidade.',atividades:'Cortejo nas ruas; oficinas de cantoria e instrumentos; vivência educativa com crianças.',metodologia:'Organização de cortejo cultural com grupos locais e oficinas em escolas.',publico:'Comunidade, estudantes, mestres da cultura.',responsaveis:'Coordenação de Cultura + Escolas Municipais.',parceiros:'Grupos de tradição; Professores; Associações comunitárias.',recursos:'Som, transporte, figurinos, material pedagógico.',resultados:'Fortalecimento da tradição popular e engajamento comunitário.',indicadores:'Nº de grupos participantes; Nº de estudantes envolvidos.'},
+        {month:1,date:'07/01',title:'Dia do Leitor',category:'literatura',tipo:'fixo',objetivo:'Estimular o hábito da leitura e aproximar autores locais da comunidade.',atividades:'Feira do livro; sessões de leitura; encontros com escritores locais.',metodologia:'Promoção de atividades literárias em escolas e bibliotecas.',publico:'Estudantes, professores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Bibliotecas Públicas.',parceiros:'Escritores locais; Editoras parceiras.',recursos:'Livros, espaço de leitura, microfones, material gráfico.',resultados:'Incentivo à leitura e valorização de autores locais.',indicadores:'Nº de livros distribuídos; Nº de alunos participantes.'},
+        {month:1,date:'08/01',title:'Dia da Fotografia',category:'artes',tipo:'fixo',objetivo:'Valorizar a fotografia como expressão cultural e memória coletiva.',atividades:'Exposição na Concha Acústica; oficinas de fotografia para jovens.',metodologia:'Exposição coletiva de fotógrafos locais e oficinas práticas.',publico:'Juventude, artistas visuais, comunidade em geral.',responsaveis:'Coordenação de Cultura.',parceiros:'Fotógrafos locais; Associações culturais.',recursos:'Painéis, fotografias, iluminação, equipamento audiovisual.',resultados:'Ampliação da valorização da fotografia e inclusão da juventude.',indicadores:'Nº de fotógrafos envolvidos; Público visitante.'},
+        {month:1,date:'21/01',title:'Dia de Combate à Intolerância Religiosa',category:'diversidade',tipo:'fixo',objetivo:'Promover o respeito à diversidade religiosa e valorizar a herança afro-brasileira.',atividades:'Palestras; apresentações de grupos de matriz africana; feira cultural.',metodologia:'Rodas de diálogo inter-religioso e apresentações culturais.',publico:'Comunidade em geral, lideranças religiosas, estudantes.',responsaveis:'Coordenação de Cultura + Grupos Religiosos.',parceiros:'Terreiros; Igrejas; CMPC; Associações comunitárias.',recursos:'Som, cadeiras, toldos, material educativo.',resultados:'Promoção da tolerância religiosa e da diversidade cultural.',indicadores:'Nº de palestras realizadas; Nº de participantes.'},
+        {month:2,date:'02/02',title:'Dia de Iemanjá',category:'religioso',tipo:'fixo',objetivo:'Valorizar a religiosidade de matriz africana e a identidade costeira do município.',atividades:'Procissão simbólica; apresentações culturais; rodas de tambor.',metodologia:'Celebração nas praias com cortejos e oficinas culturais.',publico:'Comunidade local, povos de terreiro, juventudes, pescadores.',responsaveis:'Coordenação de Cultura + Lideranças religiosas.',parceiros:'Terreiros, associações de pescadores, CMPC, escolas.',recursos:'Som, palco, transporte, material gráfico, segurança.',resultados:'Fortalecimento das tradições afro-religiosas.',indicadores:'Nº de grupos participantes; Público presente.'},
+        {month:2,date:'07/02',title:'Dia Nacional de Luta dos Povos Indígenas',category:'carnaval',tipo:'fixo',objetivo:'Valorizar e promover a cultura e os direitos dos povos indígenas.',atividades:'Oficinas de arte indígena; rodas de conversa com lideranças; exposições culturais.',metodologia:'Oficinas culturais; palestras educativas; rodas de saberes.',publico:'Estudantes, professores, comunidades indígenas.',responsaveis:'Coordenação de Cultura + Sec. Educação + Lideranças Indígenas.',parceiros:'Comunidades indígenas; universidades; CMPC.',recursos:'Espaço cultural, som, material pedagógico, transporte.',resultados:'Promoção do respeito à diversidade étnica.',indicadores:'Nº de oficinas realizadas; nº de estudantes.'},
+        {month:2,date:'15 a 17/02',title:'Carnaval',category:'carnaval',tipo:'fixo',objetivo:'Celebrar a maior festa popular do Brasil, fortalecendo blocos e escolas de samba locais.',atividades:'Desfile das escolas; blocos de rua; concursos de fantasias; shows.',metodologia:'Desfiles, blocos de rua, shows e bailes comunitários.',publico:'Comunidade em geral, blocos, escolas de samba, turistas.',responsaveis:'Coordenação de Cultura + Blocos + Escolas de Samba.',parceiros:'Associações carnavalescas; CMPC; comerciantes.',recursos:'Palco, som, iluminação, transporte, fantasias.',resultados:'Valorização da cultura carnavalesca.',indicadores:'Nº de blocos e escolas; público estimado.'},
+        {month:2,date:'21 e 22/02',title:'Lava-Pratos',category:'diversidade',tipo:'fixo',objetivo:'Manter a tradição maranhense de prolongar a folia carnavalesca.',atividades:'Shows em praça pública; blocos tradicionais; feira gastronômica.',metodologia:'Shows, blocos e cortejos culturais.',publico:'Comunidade em geral, turistas, grupos culturais.',responsaveis:'Coordenação de Cultura + Blocos Tradicionais.',parceiros:'Associações culturais; CMPC; barraqueiros.',recursos:'Palco, som, iluminação, segurança, barracas.',resultados:'Manutenção da tradição do Lava-Pratos.',indicadores:'Nº de blocos; nº de shows; público estimado.'},
+        {month:3,date:'08/03',title:'Dia Internacional da Mulher',category:'diversidade',tipo:'fixo',objetivo:'Valorizar o papel da mulher na sociedade e na cultura.',atividades:'Sarau literário; palestras sobre protagonismo feminino; feira de artesanato.',metodologia:'Roda de conversa, apresentações culturais e exposições.',publico:'Mulheres, estudantes, comunidade em geral.',responsaveis:'Coordenação de Cultura + Associações de Mulheres.',parceiros:'ONGs; escolas; universidades; CMPC.',recursos:'Som, palco, cadeiras, material gráfico.',resultados:'Maior reconhecimento da mulher na sociedade.',indicadores:'Nº de palestras; nº de mulheres participantes.'},
+        {month:3,date:'12/03',title:'Dia do Bibliotecário',category:'literatura',tipo:'fixo',objetivo:'Reconhecer a importância dos bibliotecários e incentivar o uso das bibliotecas.',atividades:'Sessões de contação de histórias; oficinas de leitura; exposição.',metodologia:'Encontros literários, oficinas de leitura e exposições.',publico:'Estudantes, professores, leitores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Bibliotecas + Escolas.',parceiros:'Escolas; universidades; bibliotecários; CMPC.',recursos:'Livros, espaço de leitura, material gráfico, som.',resultados:'Maior valorização do bibliotecário e incentivo à leitura.',indicadores:'Nº de bibliotecários envolvidos; nº de estudantes.'},
+        {month:3,date:'19/03',title:'Dia de São José (Padroeiro)',category:'religioso',tipo:'fixo',objetivo:'Celebrar o padroeiro da cidade unindo fé, tradição e cultura.',atividades:'Missa e procissão; apresentações de Tambores de Crioula e Bumba-meu-boi; feira cultural.',metodologia:'Missa solene, procissão, apresentações culturais em praça pública.',publico:'Comunidade católica, estudantes, grupos culturais, turistas.',responsaveis:'Coordenação de Cultura + Paróquia de São José + Escolas.',parceiros:'Igrejas locais; CMPC; Associações comunitárias.',recursos:'Palco, som, iluminação, transporte, segurança.',resultados:'Fortalecimento da identidade religiosa e cultural.',indicadores:'Nº de fiéis e turistas; nº de escolas e grupos.'},
+        {month:3,date:'19/03',title:'Dia do Artesão',category:'artes',tipo:'fixo',objetivo:'Valorizar os artesãos do município de São José de Ribamar, promovendo visibilidade, geração de renda e reconhecimento cultural.',atividades:'Exposição de peças artesanais; comercialização de produtos; demonstração de técnicas; registro fotográfico.',metodologia:'Seleção prévia de artesãos, estruturação do espaço e divulgação institucional.',publico:'Artesãos; comunidade local; turistas; estudantes.',responsaveis:'Coordenação de Cultura + Equipe técnica + ASCOM.',parceiros:'Artesãos locais.',recursos:'Barracas, mesas, som, energia, banners, divulgação.',resultados:'Valorização dos artesãos; geração de renda; fortalecimento cultural.',indicadores:'Nº de artesãos participantes; público presente; volume de vendas.'},
+        {month:3,date:'21/03',title:'Dia contra a Discriminação Racial',category:'diversidade',tipo:'fixo',objetivo:'Promover a igualdade racial e valorizar a cultura afro-brasileira.',atividades:'Palestras; rodas de conversa; apresentações de grupos afro; feira.',metodologia:'Palestras, rodas de diálogo, oficinas de dança afro e cortejo cultural.',publico:'Estudantes, professores, comunidade, movimentos sociais.',responsaveis:'Coordenação de Cultura + Sec. Educação + Movimentos Negros.',parceiros:'Grupos culturais afro; Terreiros; CMPC.',recursos:'Som, toldos, cadeiras, material gráfico, transporte.',resultados:'Ampliação da consciência sobre igualdade racial.',indicadores:'Nº de palestras; nº de estudantes; nº de grupos afro.'},
+        {month:3,date:'27/03',title:'Dia Mundial do Teatro',category:'artes',tipo:'fixo',objetivo:'Promover o teatro como ferramenta cultural e educativa.',atividades:'Festival de teatro local; apresentações em praças e escolas; oficinas.',metodologia:'Espetáculos, oficinas e apresentações em espaços públicos.',publico:'Estudantes, artistas, comunidade em geral, turistas.',responsaveis:'Coordenação de Cultura + Grupos de Teatro + Escolas.',parceiros:'Companhias teatrais; escolas; universidades; CMPC.',recursos:'Palco, som, iluminação, figurinos, transporte.',resultados:'Maior valorização do teatro local.',indicadores:'Nº de espetáculos; nº de estudantes; público estimado.'},
+        {month:4,date:'18/04',title:'Dia Nacional do Livro Infantil',category:'literatura',tipo:'fixo',objetivo:'Estimular a leitura e valorizar autores junto ao público infantil.',atividades:'Contação de histórias; encontros com escritores; feira do livro infantil; distribuição de livros.',metodologia:'Oficinas de contação de histórias nas escolas; distribuição de livros; feira literária infantil.',publico:'Crianças, estudantes, professores, famílias.',responsaveis:'Coordenação de Cultura + Secretaria de Educação.',parceiros:'Escolas municipais; Bibliotecas; Escritores locais; Editoras.',recursos:'Livros, espaço para feira, microfones, material gráfico.',resultados:'Maior engajamento infantil na leitura; visibilidade para autores locais.',indicadores:'Nº de livros distribuídos; Nº de escolas participantes; Nº de crianças envolvidas.'},
+        {month:4,date:'19/04',title:'Dia dos Povos Indígenas',category:'diversidade',tipo:'fixo',objetivo:'Reconhecer e valorizar as culturas dos povos indígenas, promovendo intercâmbio e respeito.',atividades:'Exposição de arte indígena; palestras com representantes indígenas; rodas de cantos tradicionais.',metodologia:'Exposição de arte indígena; oficinas com lideranças originárias; rodas de saberes em escolas.',publico:'Estudantes, professores, comunidade em geral, lideranças indígenas.',responsaveis:'Coordenação de Cultura + Secretaria de Educação + Lideranças Indígenas.',parceiros:'Organizações indígenas; CMPC; ONGs culturais.',recursos:'Som, espaço para exposição, material didático, transporte.',resultados:'Fortalecimento da consciência sobre os povos indígenas e intercâmbio cultural.',indicadores:'Nº de lideranças envolvidas; Nº de estudantes participantes; Nº de oficinas realizadas.'},
+        {month:4,date:'29/04',title:'Dia Internacional da Dança',category:'diversidade',tipo:'fixo',objetivo:'Celebrar a diversidade de ritmos e estilos de dança, aproximando artistas e comunidade.',atividades:'Mostra de danças folclóricas e contemporâneas; oficinas abertas; cortejo de dança.',metodologia:'Apresentações de grupos de dança locais; oficinas comunitárias e escolares.',publico:'Crianças, jovens, artistas, comunidade em geral.',responsaveis:'Coordenação de Cultura + Grupos de Dança Locais.',parceiros:'Grupos culturais; Escolas de Dança; Associações comunitárias.',recursos:'Som, palco, transporte, figurinos, material de divulgação.',resultados:'Ampliação do acesso à dança e valorização de grupos locais.',indicadores:'Nº de grupos de dança participantes; Público estimado; Nº de oficinas oferecidas.'},
+        {month:5,date:'05/05',title:'Dia da Língua Portuguesa',category:'literatura',tipo:'fixo',objetivo:'Valorizar a língua portuguesa como identidade cultural e incentivar a produção literária local.',atividades:'Concursos de redação e poesia; rodas de leitura; feira literária.',metodologia:'Rodas de leitura; concursos de poesia; saraus literários em escolas e bibliotecas.',publico:'Estudantes, professores, escritores locais, comunidade em geral.',responsaveis:'Coordenação de Cultura + Secretaria de Educação.',parceiros:'Bibliotecas; Escritores locais; Editoras; CMPC.',recursos:'Livros, espaço de leitura, microfones, material gráfico.',resultados:'Ampliação do hábito da leitura; valorização da literatura local.',indicadores:'Nº de estudantes e escolas participantes; nº de livros distribuídos.'},
+        {month:5,date:'08/05',title:'Dia do Artista Plástico',category:'artes',tipo:'fixo',objetivo:'Incentivar a produção em artes visuais e valorizar artistas locais.',atividades:'Mostra coletiva de artistas locais; oficinas em escolas; feira de arte.',metodologia:'Exposições, oficinas de pintura e escultura em escolas e espaços culturais.',publico:'Artistas, estudantes, comunidade cultural, turistas.',responsaveis:'Coordenação de Cultura + Escolas de Arte + Galerias.',parceiros:'Artistas locais; escolas; CMPC; ONGs culturais.',recursos:'Som, palco, iluminação, materiais de arte, espaço expositivo.',resultados:'Valorização das artes plásticas e fortalecimento da cena cultural local.',indicadores:'Nº de artistas participantes; nº de oficinas realizadas; público estimado.'},
+        {month:5,date:'13/05',title:'Abolição da Escravidão / Dia Nacional do Reggae',category:'diversidade',tipo:'fixo',objetivo:'Refletir sobre a memória da escravidão e celebrar o reggae como identidade cultural.',atividades:'Palestras; rodas de capoeira; shows de reggae; feira de afroempreendedorismo.',metodologia:'Atividades educativas em escolas; apresentações culturais; shows de reggae.',publico:'Estudantes, professores, comunidade em geral, movimentos sociais.',responsaveis:'Coordenação de Cultura + Secretaria de Igualdade Racial + Bandas de Reggae.',parceiros:'Movimentos sociais; Grupos culturais afro; CMPC; Radiolas.',recursos:'Som, palco, transporte, material gráfico, segurança.',resultados:'Fortalecimento da memória histórica e da identidade cultural do reggae.',indicadores:'Nº de palestras; nº de bandas participantes; nº de grupos afro envolvidos.'},
+        {month:5,date:'18/05',title:'Dia dos Museus',category:'artes',tipo:'fixo',objetivo:'Estimular a visitação e valorização dos museus locais, promovendo educação patrimonial.',atividades:'Visitas mediadas; exposições; oficinas artísticas; apresentações culturais.',metodologia:'Portas abertas nos museus; visitas mediadas; oficinas educativas e mostras temporárias.',publico:'Estudantes, pesquisadores, comunidade em geral, turistas.',responsaveis:'Coordenação de Cultura + Museus Locais.',parceiros:'Museus; Escolas; Associações culturais; Universidades.',recursos:'Material expositivo, transporte escolar, guias culturais, material gráfico.',resultados:'Aumento da visitação em museus; maior conhecimento do patrimônio cultural.',indicadores:'Aumento da visitação; nº de oficinas realizadas; nº de estudantes participantes.'},
+        {month:5,date:'21/05',title:'Dia da Diversidade Cultural',category:'diversidade',tipo:'fixo',objetivo:'Promover o respeito e valorização da diversidade cultural.',atividades:'Feira cultural com diferentes grupos; apresentações de danças, músicas e culinárias diversas.',metodologia:'Seminários, feiras culturais e apresentações artísticas de grupos variados.',publico:'Comunidade em geral, estudantes, grupos culturais, turistas.',responsaveis:'Coordenação de Cultura + CMPC + Associações Culturais.',parceiros:'Associações culturais; grupos folclóricos; CMPC; ONGs.',recursos:'Palco, som, iluminação, barracas, material gráfico.',resultados:'Fortalecimento da convivência intercultural e respeito à diversidade.',indicadores:'Nº de grupos culturais participantes; nº de apresentações; público estimado.'},
+        {month:6,date:'24/06',title:'Dia de São João',category:'folclore',tipo:'fixo',objetivo:'Valorizar as festas juninas como patrimônio imaterial e espaço de integração.',atividades:'Arraial municipal com bumba-meu-boi, quadrilhas e comidas típicas.',metodologia:'Arraial municipal com grupos culturais; oficinas de dança; feira gastronômica.',publico:'Toda a comunidade, turistas, grupos culturais.',responsaveis:'Coordenação de Cultura + Coordenação de Eventos.',parceiros:'Grupos culturais; Barraqueiros; CMPC.',recursos:'Som, palco, barracas, iluminação, segurança, transporte.',resultados:'Fortalecimento da identidade cultural; geração de renda.',indicadores:'Nº de grupos; público estimado; nº de barracas.'},
+        {month:7,date:'05 e 06/07',title:'Lava Bois',category:'folclore',tipo:'fixo',objetivo:'Valorizar a tradição do Lava Bois como manifestação cultural e turística.',atividades:'Apresentação de Bumba-meu-boi; cortejo cultural; feira de artesanato; shows regionais.',metodologia:'Cortejos culturais, shows, oficinas e feira gastronômica.',publico:'Turistas, comunidade local, grupos culturais.',responsaveis:'Coordenação de Cultura + Grupos de Bumba-meu-boi.',parceiros:'Associações culturais; CMPC; barraqueiros locais.',recursos:'Palco, som, iluminação, transporte, segurança.',resultados:'Fortalecimento do Lava Bois como tradição cultural e turística.',indicadores:'Nº de bois participantes; público estimado; nº de barraqueiros envolvidos.'},
+        {month:7,date:'08/07',title:'Dia da Ciência e do Pesquisador',category:'civico',tipo:'fixo',objetivo:'Promover a ciência como motor de desenvolvimento cultural.',atividades:'Feira de ciências nas escolas; palestras com pesquisadores; exposições interativas.',metodologia:'Feiras de ciências, palestras e exposições interativas.',publico:'Estudantes, professores, pesquisadores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Secretaria de Educação + Universidades.',parceiros:'Universidades; escolas; CMPC; pesquisadores locais.',recursos:'Material para feira, som, espaço cultural, material gráfico.',resultados:'Estímulo à curiosidade científica e valorização dos pesquisadores.',indicadores:'Nº de escolas participantes; nº de projetos apresentados; público estimado.'},
+        {month:7,date:'13/07',title:'Dia Mundial do Rock',category:'musica',tipo:'fixo',objetivo:'Valorizar a cena do rock local e promover o intercâmbio entre bandas.',atividades:'Festival com bandas locais; feira de artigos de rock; workshops de música.',metodologia:'Festival de rock com bandas locais; oficinas e feiras.',publico:'Jovens, músicos, comunidade em geral, turistas.',responsaveis:'Coordenação de Cultura + Bandas Locais.',parceiros:'Bandas; escolas; CMPC; associações musicais.',recursos:'Palco, som, iluminação, instrumentos musicais.',resultados:'Fortalecimento da cena musical e maior valorização dos artistas locais.',indicadores:'Nº de bandas participantes; público estimado; nº de shows realizados.'},
+        {month:7,date:'25/07',title:'Dia da Mulher Negra / Dia do Escritor',category:'diversidade',tipo:'fixo',objetivo:'Valorizar a mulher negra e o escritor como agentes de transformação cultural.',atividades:'Roda de conversa; lançamento de livros; sarau literário.',metodologia:'Sarau literário, palestras, rodas de conversa e lançamentos de livros.',publico:'Escritores, mulheres negras, estudantes, comunidade em geral.',responsaveis:'Coordenação de Cultura + CMPC + Associações Literárias e de Mulheres.',parceiros:'Associações literárias; CMPC; ONGs; movimentos sociais.',recursos:'Livros, material gráfico, som, espaço cultural.',resultados:'Maior reconhecimento da mulher negra e dos escritores locais.',indicadores:'Nº de escritoras e escritores participantes; nº de livros lançados.'},
+        {month:7,date:'26/07',title:'Dia de Nossa Senhora de Santana',category:'religioso',tipo:'fixo',objetivo:'Celebrar a padroeira Santana e integrar fé e cultura popular.',atividades:'Missa solene; procissão; apresentação de corais e grupos religiosos locais.',metodologia:'Missa solene, procissão e apresentações culturais religiosas.',publico:'Comunidade católica, famílias, grupos culturais.',responsaveis:'Coordenação de Cultura + Paróquias Locais.',parceiros:'Igrejas; escolas; CMPC; associações comunitárias.',recursos:'Som, palco, transporte, material religioso.',resultados:'Integração entre fé e cultura; fortalecimento da religiosidade popular.',indicadores:'Nº de fiéis presentes; nº de grupos culturais envolvidos.'},
+        {month:8,date:'10/08',title:'Dia da Literatura Maranhense',category:'literatura',tipo:'fixo',objetivo:'Valorizar escritores maranhenses e estimular a leitura e produção literária local.',atividades:'Feira do livro maranhense; encontro com escritores locais; oficinas literárias.',metodologia:'Sarau literário, concursos de redação e oficinas de escrita criativa.',publico:'Estudantes, professores, escritores locais, comunidade em geral.',responsaveis:'Coordenação de Cultura + Bibliotecas Públicas.',parceiros:'Escritores locais; editoras; CMPC; universidades.',recursos:'Livros, material gráfico, som, microfones, espaço cultural.',resultados:'Maior valorização da literatura maranhense e incentivo à leitura.',indicadores:'Nº de escritores participantes; nº de livros distribuídos; nº de escolas envolvidas.'},
+        {month:8,date:'12/08',title:'Dia Nacional das Artes',category:'artes',tipo:'fixo',objetivo:'Promover as artes em suas diferentes linguagens como expressão cultural.',atividades:'Exposição de artes plásticas; oficinas de teatro e dança; apresentações musicais.',metodologia:'Mostras artísticas, exposições e oficinas em artes visuais, música e teatro.',publico:'Estudantes, artistas, comunidade cultural, famílias.',responsaveis:'Coordenação de Cultura + Escolas de Arte.',parceiros:'Associações artísticas; CMPC; escolas; ONGs culturais.',recursos:'Som, palco, iluminação, material expositivo, transporte.',resultados:'Difusão das diferentes expressões artísticas e fortalecimento da cena cultural.',indicadores:'Nº de artistas participantes; nº de oficinas realizadas; público estimado.'},
+        {month:8,date:'19/08',title:'Dia do Historiador',category:'civico',tipo:'fixo',objetivo:'Reconhecer a importância dos historiadores e promover a memória cultural.',atividades:'Palestras com historiadores; oficinas de história oral; rodas de memória.',metodologia:'Seminários, palestras e oficinas de história local e oralidade.',publico:'Estudantes, professores, pesquisadores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Universidades + Escolas.',parceiros:'Associações de historiadores; escolas; universidades; CMPC.',recursos:'Projetor, som, material gráfico, espaço escolar/cultural.',resultados:'Reconhecimento do papel dos historiadores e fortalecimento da memória coletiva.',indicadores:'Nº de palestras realizadas; nº de estudantes e pesquisadores envolvidos.'},
+        {month:8,date:'22/08',title:'Dia do Folclore',category:'folclore',tipo:'fixo',objetivo:'Valorizar e difundir as manifestações folclóricas, fortalecendo a identidade cultural.',atividades:'Cortejo cultural; oficinas de brinquedos tradicionais; contação de histórias populares.',metodologia:'Cortejos, oficinas, apresentações de grupos tradicionais e contação de histórias.',publico:'Crianças, jovens, estudantes, comunidade, mestres da cultura popular.',responsaveis:'Coordenação de Cultura + Escolas Municipais + Grupos Folclóricos.',parceiros:'Associações culturais; CMPC; Mestres de cultura; ONGs educativas.',recursos:'Som, palco, transporte, figurinos, material pedagógico, espaço público.',resultados:'Fortalecimento do folclore local; maior engajamento das escolas.',indicadores:'Nº de grupos participantes; nº de escolas envolvidas; público; nº de oficinas.'},
+        {month:9,date:'07/09',title:'Independência do Brasil',category:'civico',tipo:'fixo',objetivo:'Celebrar a independência com destaque para a identidade cultural ribamarense.',atividades:'Desfile cívico-cultural com escolas, fanfarras e grupos artísticos.',metodologia:'Desfile cívico-cultural integrando escolas, fanfarras e grupos artísticos.',publico:'Estudantes, professores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Secretaria de Educação.',parceiros:'Escolas; Grupos culturais; CMPC.',recursos:'Palco, som, transporte, figurinos, bandeiras, segurança.',resultados:'Integração das escolas com a cultura local.',indicadores:'Nº de escolas e grupos participantes; público estimado.'},
+        {month:10,date:'01/10',title:'Dia Internacional da Música',category:'musica',tipo:'fixo',objetivo:'Valorizar a música como linguagem universal e de integração cultural.',atividades:'Concertos em praças; oficinas de iniciação musical; apresentações de bandas locais.',metodologia:'Concertos, oficinas musicais e apresentações em espaços públicos.',publico:'Músicos, estudantes, comunidade em geral.',responsaveis:'Coordenação de Cultura + Escolas de Música + CMPC.',parceiros:'Bandas locais; escolas; CMPC; ONGs culturais.',recursos:'Palco, som, iluminação, instrumentos musicais.',resultados:'Fortalecimento da cena musical local e maior valorização dos artistas.',indicadores:'Nº de concertos; nº de músicos participantes; público.'},
+        {month:10,date:'07/10',title:'Dia do Compositor',category:'musica',tipo:'fixo',objetivo:'Reconhecer e valorizar o trabalho dos compositores locais.',atividades:'Sarau de compositores; oficinas de composição em escolas; lançamentos musicais.',metodologia:'Saraus, oficinas e encontros de compositores.',publico:'Compositores, músicos, estudantes e comunidade cultural.',responsaveis:'Coordenação de Cultura + Associações Musicais + Escolas.',parceiros:'Compositores locais; escolas; universidades; CMPC.',recursos:'Som, palco, iluminação, instrumentos, material pedagógico.',resultados:'Valorização dos compositores e estímulo à criação musical.',indicadores:'Nº de compositores participantes; nº de oficinas; público.'},
+        {month:10,date:'08/10',title:'Dia do Nordestino',category:'folclore',tipo:'fixo',objetivo:'Celebrar a identidade cultural nordestina.',atividades:'Apresentações culturais, feiras gastronômicas e de artesanato, shows de forró.',metodologia:'Apresentações culturais, feiras e shows em espaços públicos.',publico:'Comunidade em geral, turistas, artistas.',responsaveis:'Coordenação de Cultura + Grupos Culturais Nordestinos.',parceiros:'Grupos culturais; CMPC; barraqueiros; comerciantes.',recursos:'Palco, som, iluminação, barracas, segurança.',resultados:'Fortalecimento da identidade cultural nordestina.',indicadores:'Nº de grupos participantes; público estimado.'},
+        {month:10,date:'12/10',title:'Dia das Crianças / N. S. Aparecida',category:'religioso',tipo:'fixo',objetivo:'Promover cultura para crianças e fortalecer a fé popular pela padroeira do Brasil.',atividades:'Brincadeiras populares; contação de histórias; teatro infantil; cantatas religiosas; missa.',metodologia:'Programação infantil em praças e escolas; celebração religiosa.',publico:'Crianças, famílias, estudantes, comunidade católica.',responsaveis:'Coordenação de Cultura + Secretaria de Educação + Paróquias.',parceiros:'Escolas; Igrejas; Associações comunitárias; CMPC.',recursos:'Som, palco, brinquedos, material artístico, espaço religioso.',resultados:'Integração das crianças em atividades culturais; lazer educativo.',indicadores:'Nº de crianças participantes; nº de escolas envolvidas; público.'},
+        {month:10,date:'15/10',title:'Dia do Professor',category:'civico',tipo:'fixo',objetivo:'Reconhecer e valorizar o papel dos professores na formação cultural e educacional.',atividades:'Apresentações artísticas feitas por alunos, palestras e atividades de integração.',metodologia:'Promoção de apresentações, palestras e integração cultural entre educadores e comunidade.',publico:'Professores, estudantes, comunidade escolar.',responsaveis:'Coordenação de Cultura + Secretaria de Educação.',parceiros:'Escolas; CMPC; Sindicato dos Professores.',recursos:'Som, palco, certificados, material gráfico.',resultados:'Valorização do corpo docente; integração escola-comunidade.',indicadores:'Nº de professores homenageados; nº de escolas participantes.'},
+        {month:10,date:'28/10',title:'Dia do Servidor Público',category:'civico',tipo:'fixo',objetivo:'Homenagear os servidores públicos com atividades de valorização e cultura.',atividades:'Apresentações musicais, entrega de homenagens e atividades de lazer.',metodologia:'Evento cultural e social voltado para os servidores do município.',publico:'Servidores públicos e seus familiares.',responsaveis:'Coordenação de Cultura + Secretaria de Administração.',parceiros:'Associações de servidores; CMPC.',recursos:'Palco, som, espaço público, material gráfico.',resultados:'Reconhecimento do servidor público e valorização institucional.',indicadores:'Nº de servidores homenageados; público estimado.'},
+        {month:10,date:'29/10',title:'Dia Nacional do Livro',category:'literatura',tipo:'fixo',objetivo:'Estimular o hábito da leitura e valorizar autores e editoras locais.',atividades:'Feira do livro; saraus literários; oficinas de leitura nas escolas.',metodologia:'Feira do livro; contação de histórias; rodas de leitura.',publico:'Estudantes, escritores, comunidade em geral.',responsaveis:'Coordenação de Cultura + Bibliotecas + Escolas.',parceiros:'Bibliotecas; Escritores locais; Editoras; CMPC.',recursos:'Livros, espaço de leitura, microfones, material gráfico.',resultados:'Incentivo à leitura e valorização da literatura local.',indicadores:'Nº de livros distribuídos; nº de escolas participantes.'},
+        {month:10,date:'31/10',title:'Dia da Poesia / Dia do Evangélico / Dia do Saci',category:'literatura',tipo:'fixo',objetivo:'Promover literatura, religiosidade e cultura popular em um mesmo dia de integração.',atividades:'Sarau de poesia; culto ecumênico; apresentações teatrais sobre o Saci.',metodologia:'Sarau de poesia; culto evangélico; apresentações culturais sobre o Saci.',publico:'Estudantes, escritores, evangélicos, comunidade cultural.',responsaveis:'Coordenação de Cultura + Associações Literárias + Igrejas + Grupos Culturais.',parceiros:'Igrejas; Associações literárias; Escolas; CMPC.',recursos:'Som, palco, livros, material gráfico, espaço religioso.',resultados:'Integração de literatura, fé e cultura popular em uma data única.',indicadores:'Nº de poesias apresentadas; nº de igrejas envolvidas; público.'},
+        {month:11,date:'20/11',title:'Dia da Consciência Negra',category:'diversidade',tipo:'fixo',objetivo:'Refletir sobre a história, promover igualdade racial e valorizar a herança cultural afro-brasileira.',atividades:'Desfile cultural; palestras; rodas de conversa; feira de afroempreendedorismo.',metodologia:'Cortejo cultural afro, rodas de capoeira, apresentações e feira.',publico:'Comunidade em geral, estudantes, professores, movimentos sociais.',responsaveis:'Coordenação de Cultura + Sec. Igualdade Racial + Movimentos Negros.',parceiros:'Grupos culturais afro; Terreiros; ONGs; CMPC.',recursos:'Palco, som, iluminação, transporte, barracas.',resultados:'Maior conscientização sobre igualdade racial.',indicadores:'Nº de grupos afro; nº de feiras; público.'},
+        {month:12,date:'25/12',title:'Natal',category:'religioso',tipo:'fixo',objetivo:'Celebrar o Natal integrando espiritualidade, cultura e lazer comunitário.',atividades:'Cantatas natalinas; apresentações teatrais de presépio; distribuição de brinquedos; missa do galo.',metodologia:'Cantatas em praças e igrejas; teatro natalino; ação solidária.',publico:'Toda a comunidade, famílias, crianças, comunidade religiosa.',responsaveis:'Coordenação de Cultura + Igrejas + Associações comunitárias.',parceiros:'Igrejas; escolas; empresas parceiras; CMPC; ONGs.',recursos:'Som, palco, iluminação, brinquedos, materiais para decoração.',resultados:'Fortalecimento dos laços comunitários e solidariedade.',indicadores:'Nº de brinquedos distribuídos; nº de apresentações; público.'},
+    ];
+    ev.forEach(e => { if(!e.id) e.id=genId(); });
+    if(!onlyReturn) setEvents(ev);
+    return ev;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    _testStorage();
+    mergeDefaultEvents();
+    renderList();
+    renderStats();
+});
+</script>
+
+<!-- ========== PWA ========== -->
+<script>
+/* MANIFEST — gerado dinamicamente como Blob */
+(function() {
+    var manifest = {
+        name: "SEMTUR Cultural 2026",
+        short_name: "SEMTUR",
+        description: "Gestão de Eventos e Calendário Cultural — São José de Ribamar",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#0f1117",
+        theme_color: "#6c63ff",
+        orientation: "portrait",
+        icons: [
+            {
+                src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%236c63ff'/><text y='360' x='256' text-anchor='middle' font-size='300'>🎭</text></svg>",
+                sizes: "512x512",
+                type: "image/svg+xml",
+                purpose: "any maskable"
+            }
+        ]
+    };
+    var blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var link = document.createElement('link');
+    link.rel  = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
+})();
+
+/* SERVICE WORKER — cache offline */
+if ('serviceWorker' in navigator) {
+    var swCode = `
+        var CACHE = 'semtur-v1';
+        var ASSETS = ['./', './index.html'];
+        self.addEventListener('install', function(e) {
+            e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }));
+            self.skipWaiting();
+        });
+        self.addEventListener('activate', function(e) {
+            e.waitUntil(caches.keys().then(function(keys){
+                return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+            }));
+            self.clients.claim();
+        });
+        self.addEventListener('fetch', function(e) {
+            e.respondWith(
+                caches.match(e.request).then(function(cached){
+                    return cached || fetch(e.request).catch(function(){
+                        return new Response('<h2 style="font-family:sans-serif;text-align:center;margin-top:20vh;color:#6c63ff">Sem conexão</h2>', {headers:{'Content-Type':'text/html'}});
+                    });
+                })
+            );
+        });
+    `;
+    var blob = new Blob([swCode], {type: 'application/javascript'});
+    var swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).then(function(reg) {
+        console.log('SW registrado:', reg.scope);
+    }).catch(function(err) {
+        console.log('SW erro:', err);
+    });
+}
+
+/* INSTALAR APP — prompt nativo */
+var _installPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    _installPrompt = e;
+    var btn = document.getElementById('btn-install');
+    if (btn) btn.style.display = 'inline-flex';
+});
+
+function installPWA() {
+    if (_installPrompt) {
+        _installPrompt.prompt();
+        _installPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                var btn = document.getElementById('btn-install');
+                if (btn) btn.style.display = 'none';
+                showToast('App instalado com sucesso! 🎉');
+            }
+            _installPrompt = null;
+        });
+    } else {
+        showToast('Para instalar: menu do navegador → "Adicionar à tela inicial"');
+    }
+}
+
+window.addEventListener('appinstalled', function() {
+    var btn = document.getElementById('btn-install');
+    if (btn) btn.style.display = 'none';
+    showToast('SEMTUR Cultural instalado! 🎉');
+});
+</script>
+</body>
+</html>
