@@ -15,6 +15,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --bg:        #0f1117;
@@ -219,13 +220,21 @@
 <!-- LOGIN -->
 <div id="login-screen">
     <div class="login-box">
-        <div class="logo">🎭 Portal Cultural</div>
-        <div class="sub">Gestão de Eventos e Calendário Cultural 2026 — SEMTUR</div>
-        <input type="password" id="pwd-input" placeholder="Senha de acesso" autocomplete="current-password">
-        <button class="btn btn-add" style="width:100%;justify-content:center;" onclick="doLogin()"><i class="fa-solid fa-lock-open"></i> Entrar</button>
-        <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
-        <div id="storage-warning" style="display:none;margin-top:.8rem;padding:.6rem;background:rgba(251,191,36,.15);border:1px solid #fbbf24;border-radius:8px;font-size:.78rem;color:#fbbf24;">
-            ⚠️ Modo navegação privada detectado. Os eventos serão salvos apenas durante esta sessão.
+        <div class="logo">🎭</div>
+        <div class="logo" style="font-size:1.1rem;margin-bottom:.3rem;">SEMTUR Cultural 2026</div>
+        <div class="sub">Gestão de Eventos e Calendário Cultural<br>São José de Ribamar</div>
+        <input type="email" id="email-input" placeholder="Seu e-mail"
+            autocomplete="email" autocorrect="off" autocapitalize="off"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1.1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;margin-bottom:.75rem;">
+        <input type="password" id="pwd-input" placeholder="Sua senha"
+            autocomplete="current-password" autocorrect="off" autocapitalize="off"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1.1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;margin-bottom:1rem;">
+        <button class="btn btn-add" id="login-btn" style="width:100%;justify-content:center;padding:.9rem;font-size:1rem;">
+            🔓 Entrar
+        </button>
+        <div class="login-error" id="login-error" style="margin-top:.75rem;">E-mail ou senha incorretos. Tente novamente.</div>
+        <div style="margin-top:1rem;font-size:.78rem;color:var(--muted);text-align:center;">
+            Acesso restrito à equipe SEMTUR
         </div>
     </div>
 </div>
@@ -449,34 +458,39 @@ const CATEGORY_ICONS = { religioso:'fa-hands-praying', musica:'fa-music', folclo
 
 /* AUTH */
 function doLogin() {
-    if (document.getElementById('pwd-input').value === SENHA) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        if (!_storageOk) {
-            document.getElementById('storage-warning').style.display = 'block';
-            showToast('⚠️ Modo privado: dados não serão salvos permanentemente.', true);
-        }
-        mergeDefaultEvents();
-        renderList(); renderStats();
-    } else {
+    var email = document.getElementById('email-input') ? document.getElementById('email-input').value.trim() : '';
+    var pwd   = document.getElementById('pwd-input').value.trim();
+    if (!email || !pwd) {
         document.getElementById('login-error').style.display = 'block';
-        document.getElementById('pwd-input').value = '';
-        document.getElementById('pwd-input').focus();
+        return;
     }
+    var btn = document.getElementById('login-btn');
+    if (btn) { btn.textContent = '⏳ Entrando...'; btn.disabled = true; }
+
+    auth.signInWithEmailAndPassword(email, pwd)
+        .then(function() {
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadEventsFromFirestore();
+        })
+        .catch(function(err) {
+            console.error('Erro login:', err);
+            document.getElementById('login-error').style.display = 'block';
+            document.getElementById('pwd-input').value = '';
+            if (btn) { btn.textContent = '🔓 Entrar'; btn.disabled = false; }
+        });
 }
-document.getElementById('pwd-input').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 function doLogout() {
-    if (confirm('Deseja realmente sair do sistema?')) {
-        window.close();
-        // Caso o navegador bloqueie o fechamento
-        setTimeout(function() {
-            document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;flex-direction:column;gap:1rem;font-family:DM Sans,sans-serif;">' +
-                '<div style="font-size:3rem;">👋</div>' +
-                '<div style="color:#a78bfa;font-size:1.3rem;font-weight:700;">Sessão encerrada</div>' +
-                '<div style="color:#7c87a6;font-size:.9rem;">Pode fechar esta aba com segurança.</div>' +
-                '<button onclick="location.reload()" style="margin-top:1rem;background:#6c63ff;color:#fff;border:none;border-radius:10px;padding:.7rem 1.5rem;font-size:.9rem;cursor:pointer;">↩ Voltar ao sistema</button>' +
-            '</div>';
-        }, 300);
+    if (confirm('Deseja realmente sair?')) {
+        auth.signOut().then(function() {
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+            if (document.getElementById('email-input')) document.getElementById('email-input').value = '';
+            document.getElementById('pwd-input').value = '';
+            var btn = document.getElementById('login-btn');
+            if (btn) { btn.textContent = '🔓 Entrar'; btn.disabled = false; }
+        });
     }
 }
 
@@ -493,7 +507,8 @@ const firebaseConfig = {
     measurementId: "G-2XV51MCWGL"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db   = firebase.firestore();
+const auth = firebase.auth();
 const COLLECTION = 'eventos';
 
 // Cache local para operações síncronas
@@ -959,11 +974,30 @@ function getDefaultEvents(onlyReturn=false) {
     return ev;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    // Abre o app direto
-    document.getElementById('app').style.display = 'block';
-    // Carrega eventos do Firebase
-    loadEventsFromFirestore();
+window.addEventListener('DOMContentLoaded', function() {
+    // Registrar botão login
+    var btn = document.getElementById('login-btn');
+    if (btn) btn.addEventListener('click', function() { doLogin(); });
+
+    // Enter nos campos
+    var pwdEl = document.getElementById('pwd-input');
+    if (pwdEl) pwdEl.addEventListener('keyup', function(e){ if(e.keyCode===13) doLogin(); });
+    var emailEl = document.getElementById('email-input');
+    if (emailEl) emailEl.addEventListener('keyup', function(e){ if(e.keyCode===13) doLogin(); });
+
+    // Verificar sessão ativa automaticamente
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            // Já logado — mostrar app direto
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadEventsFromFirestore();
+        } else {
+            // Não logado — mostrar tela de login
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    });
 });
 </script>
 
