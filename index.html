@@ -12,6 +12,9 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236c63ff'/><text y='70' x='50' text-anchor='middle' font-size='55'>🎭</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg:        #0f1117;
@@ -477,45 +480,91 @@ function doLogout() {
     }
 }
 
-/* STORAGE — com fallback em memória para iOS Safari */
-let _memoryStore = null; // fallback quando localStorage não está disponível
-let _storageOk = true;
+/* ============================================================
+   FIREBASE FIRESTORE — banco de dados em tempo real
+============================================================ */
+const firebaseConfig = {
+    apiKey: "AIzaSyAqcl6zDFgXoF3HC1cThraYI0RboQ1f414",
+    authDomain: "semtur-cultural.firebaseapp.com",
+    projectId: "semtur-cultural",
+    storageBucket: "semtur-cultural.firebasestorage.app",
+    messagingSenderId: "997033445071",
+    appId: "1:997033445071:web:6ee0939f12562f943a19ba",
+    measurementId: "G-2XV51MCWGL"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const COLLECTION = 'eventos';
 
-function _testStorage() {
+// Cache local para operações síncronas
+let _localCache = null;
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// Carregar eventos do Firestore
+async function loadEventsFromFirestore() {
     try {
-        localStorage.setItem('__test__', '1');
-        localStorage.removeItem('__test__');
-        _storageOk = true;
-    } catch(e) {
-        _storageOk = false;
-        console.warn('[SEMTUR] localStorage indisponível — usando memória.');
+        showToast('🔄 Sincronizando...', false);
+        const snapshot = await db.collection(COLLECTION).get();
+        if (snapshot.empty) {
+            // Primeira vez — carregar defaults no Firestore
+            const defaults = getDefaultEvents();
+            await saveAllToFirestore(defaults);
+            _localCache = defaults;
+        } else {
+            _localCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        renderList();
+        renderStats();
+        showToast('✅ Sincronizado!', false);
+    } catch(err) {
+        console.error('Erro Firestore:', err);
+        // Fallback para localStorage
+        const raw = localStorage.getItem(STORAGE_KEY);
+        _localCache = raw ? JSON.parse(raw) : getDefaultEvents();
+        renderList();
+        renderStats();
+        showToast('⚠️ Modo offline', true);
     }
 }
 
+async function saveAllToFirestore(events) {
+    const batch = db.batch();
+    events.forEach(ev => {
+        const ref = db.collection(COLLECTION).doc(ev.id);
+        batch.set(ref, ev);
+    });
+    await batch.commit();
+}
+
 function getEvents() {
-    try {
-        if (_storageOk) {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : getDefaultEvents();
-        }
-    } catch(e) { _storageOk = false; }
-    // Fallback: usar memória
-    if (!_memoryStore) _memoryStore = getDefaultEvents();
-    return _memoryStore;
+    return _localCache || [];
 }
 
 function setEvents(ev) {
-    try {
-        if (_storageOk) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(ev));
-            return;
-        }
-    } catch(e) { _storageOk = false; }
-    // Fallback: salvar em memória
-    _memoryStore = ev;
+    _localCache = ev;
+    // Salvar no localStorage como backup
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ev)); } catch(e) {}
 }
 
-function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+async function saveEventToFirestore(ev) {
+    try {
+        await db.collection(COLLECTION).doc(ev.id).set(ev);
+    } catch(err) {
+        console.error('Erro ao salvar no Firestore:', err);
+        showToast('⚠️ Salvo localmente. Sem conexão.', true);
+    }
+}
+
+async function deleteEventFromFirestore(id) {
+    try {
+        await db.collection(COLLECTION).doc(id).delete();
+    } catch(err) {
+        console.error('Erro ao excluir no Firestore:', err);
+    }
+}
+
+function _testStorage() {} // mantido por compatibilidade
 
 /* MODAL */
 function openModal(id) {
@@ -576,7 +625,9 @@ function saveEvent() {
         indicadores:document.getElementById('f-indicadores').value.trim() };
     if (id) { const i = events.findIndex(e=>e.id===id); if(i!==-1) events[i]=ev; showToast('Evento atualizado!'); }
     else { events.push(ev); showToast('Evento salvo!'); }
-    setEvents(events); closeModal(); renderList(); renderStats();
+    setEvents(events);
+    saveEventToFirestore(ev); // salva no Firestore em tempo real
+    closeModal(); renderList(); renderStats();
 }
 
 /* DELETE */
@@ -898,9 +949,7 @@ function getDefaultEvents(onlyReturn=false) {
 
 window.addEventListener('DOMContentLoaded', () => {
     _testStorage();
-    mergeDefaultEvents();
-    renderList();
-    renderStats();
+    // Dados carregados pelo loadEventsFromFirestore()
 });
 </script>
 
