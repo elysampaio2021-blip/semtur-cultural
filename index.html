@@ -648,8 +648,12 @@ function deleteEvent(id) {
 }
 function confirmDelete() {
     if (!pendingDeleteId) return;
-    setEvents(getEvents().filter(e=>e.id!==pendingDeleteId));
+    var idToDelete = pendingDeleteId;
+    // 1. Remover do cache local imediatamente
+    setEvents(getEvents().filter(function(e){ return e.id !== idToDelete; }));
     closeConfirm(); renderList(); renderStats(); showToast('Evento excluído.');
+    // 2. Apagar do Firebase em segundo plano
+    deleteEventFromFirestore(idToDelete);
 }
 function showDetails(id) {
     const ev = getEvents().find(e => e.id === id);
