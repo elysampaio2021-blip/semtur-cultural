@@ -468,10 +468,11 @@ function doLogin() {
     if (btn) { btn.textContent = '⏳ Entrando...'; btn.disabled = true; }
 
     auth.signInWithEmailAndPassword(email, pwd)
-        .then(function() {
+        .then(function(result) {
             document.getElementById('login-error').style.display = 'none';
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
+            registrarSessao(result.user.uid);
             loadEventsFromFirestore();
         })
         .catch(function(err) {
@@ -483,6 +484,7 @@ function doLogin() {
 }
 function doLogout() {
     if (confirm('Deseja realmente sair?')) {
+        if (_sessionListener) { _sessionListener(); _sessionListener = null; }
         auth.signOut().then(function() {
             document.getElementById('app').style.display = 'none';
             document.getElementById('login-screen').style.display = 'flex';
@@ -509,6 +511,46 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db   = firebase.firestore();
 const auth = firebase.auth();
+
+// Sessão única por dispositivo
+var _sessionToken = null;
+var _sessionListener = null;
+
+function gerarToken() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+async function registrarSessao(uid) {
+    _sessionToken = gerarToken();
+    try {
+        await db.collection('sessoes').doc(uid).set({
+            token: _sessionToken,
+            dispositivo: navigator.userAgent.substring(0, 100),
+            ultimoAcesso: new Date().toISOString()
+        });
+        // Monitorar se outra sessão foi aberta
+        monitorarSessao(uid);
+    } catch(e) {
+        console.error('Erro ao registrar sessão:', e);
+    }
+}
+
+function monitorarSessao(uid) {
+    // Cancelar listener anterior se existir
+    if (_sessionListener) _sessionListener();
+    
+    _sessionListener = db.collection('sessoes').doc(uid).onSnapshot(function(doc) {
+        if (!doc.exists) return;
+        var dados = doc.data();
+        // Se o token mudou, outro dispositivo logou
+        if (dados.token !== _sessionToken) {
+            showToast('⚠️ Sessão encerrada! Outro dispositivo acessou sua conta.', true);
+            setTimeout(function() {
+                auth.signOut();
+            }, 2000);
+        }
+    });
+}
 const COLLECTION = 'eventos';
 
 // Cache local para operações síncronas
@@ -991,9 +1033,11 @@ window.addEventListener('DOMContentLoaded', function() {
             // Já logado — mostrar app direto
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
+            registrarSessao(user.uid);
             loadEventsFromFirestore();
         } else {
             // Não logado — mostrar tela de login
+            if (_sessionListener) { _sessionListener(); _sessionListener = null; }
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
         }
