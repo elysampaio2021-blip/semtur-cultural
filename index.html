@@ -503,38 +503,46 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 
 // Carregar eventos do Firestore
 async function loadEventsFromFirestore() {
+    // 1. Mostrar defaults IMEDIATAMENTE enquanto carrega do Firebase
+    _localCache = getDefaultEvents();
+    renderList();
+    renderStats();
+
+    // 2. Tentar sincronizar com Firebase em segundo plano
     try {
-        showToast('🔄 Sincronizando...', false);
         const snapshot = await db.collection(COLLECTION).get();
         if (snapshot.empty) {
-            // Primeira vez — carregar defaults no Firestore
-            const defaults = getDefaultEvents();
-            await saveAllToFirestore(defaults);
-            _localCache = defaults;
+            // Primeira vez — salvar defaults no Firebase
+            saveAllToFirestore(_localCache).then(function() {
+                showToast('✅ ' + _localCache.length + ' eventos salvos na nuvem!', false);
+            });
         } else {
-            _localCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Já tem dados no Firebase — usar eles
+            _localCache = snapshot.docs.map(function(doc) {
+                return Object.assign({ id: doc.id }, doc.data());
+            });
+            renderList();
+            renderStats();
+            showToast('✅ Sincronizado com a nuvem!', false);
         }
-        renderList();
-        renderStats();
-        showToast('✅ Sincronizado!', false);
     } catch(err) {
-        console.error('Erro Firestore:', err);
-        // Fallback para localStorage
-        const raw = localStorage.getItem(STORAGE_KEY);
-        _localCache = raw ? JSON.parse(raw) : getDefaultEvents();
-        renderList();
-        renderStats();
-        showToast('⚠️ Modo offline', true);
+        console.error('Firebase offline:', err);
+        showToast('⚠️ Modo offline — dados locais', true);
     }
 }
 
 async function saveAllToFirestore(events) {
-    const batch = db.batch();
-    events.forEach(ev => {
-        const ref = db.collection(COLLECTION).doc(ev.id);
-        batch.set(ref, ev);
-    });
-    await batch.commit();
+    // Salvar em lotes de 20 para evitar limite do Firestore
+    const chunkSize = 20;
+    for (let i = 0; i < events.length; i += chunkSize) {
+        const chunk = events.slice(i, i + chunkSize);
+        const batch = db.batch();
+        chunk.forEach(ev => {
+            const ref = db.collection(COLLECTION).doc(ev.id);
+            batch.set(ref, ev);
+        });
+        await batch.commit();
+    }
 }
 
 function getEvents() {
@@ -948,8 +956,10 @@ function getDefaultEvents(onlyReturn=false) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    _testStorage();
-    // Dados carregados pelo loadEventsFromFirestore()
+    // Abre o app direto
+    document.getElementById('app').style.display = 'block';
+    // Carrega eventos do Firebase
+    loadEventsFromFirestore();
 });
 </script>
 
