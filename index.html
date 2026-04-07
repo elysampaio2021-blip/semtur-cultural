@@ -1041,25 +1041,25 @@ window.addEventListener('DOMContentLoaded', function() {
     var emailEl = document.getElementById('email-input');
     if (emailEl) emailEl.addEventListener('keyup', function(e){ if(e.keyCode===13) doLogin(); });
 
-    // Verificar sessão ativa automaticamente
-    auth.onAuthStateChanged(function(user) {
-        // Esconder loading sempre que o Firebase resolver a sessão
+    // Login obrigatório a cada acesso
+    auth.signOut().then(function() {
         var loading = document.getElementById('loading-screen');
         if (loading) loading.style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+    });
 
+    auth.onAuthStateChanged(function(user) {
         if (user) {
-            // Já logado — mostrar app direto sem passar pelo login
+            var loading = document.getElementById('loading-screen');
+            if (loading) loading.style.display = 'none';
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
             registrarSessao(user.uid);
             loadEventsFromFirestore();
-        } else {
-            // Não logado — mostrar tela de login
-            if (_sessionListener) { _sessionListener(); _sessionListener = null; }
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
         }
     });
+});
 
 </script>
 
