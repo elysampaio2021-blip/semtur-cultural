@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR">D
 <head>
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1042,7 +1042,7 @@ window.addEventListener('DOMContentLoaded', function() {
     if (emailEl) emailEl.addEventListener('keyup', function(e){ if(e.keyCode===13) doLogin(); });
 
     // Verificar sessão ativa automaticamente
-    auth.signOut().finally(function() {     auth.onAuthStateChanged(function(user) {
+    auth.onAuthStateChanged(function(user) {
         // Esconder loading sempre que o Firebase resolver a sessão
         var loading = document.getElementById('loading-screen');
         if (loading) loading.style.display = 'none';
@@ -1060,7 +1060,7 @@ window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('app').style.display = 'none';
         }
     });
-});
+
 </script>
 
 <!-- ========== PWA ========== -->
