@@ -712,12 +712,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
             <textarea id="edit-obj" rows="3" placeholder="Ex: Você sabia que os primeiros habitantes de Ribamar foram os índios Gamelas?"></textarea>
         </div>
         <div class="edit-group">
-            <div class="edit-label">Ação SEMTUR</div>
-            <textarea id="edit-acao" rows="2" placeholder="Ação da SEMTUR para este evento..."></textarea>
-        </div>
-        <div class="edit-group">
-            <div class="edit-label">Atividades</div>
-            <textarea id="edit-atv" rows="2" placeholder="Atividades previstas..."></textarea>
+            <div class="edit-label">📋 Ação e Atividade <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(deixe em branco se não houver)</span></div>
+            <textarea id="edit-acao" rows="3" placeholder="Ex: Exposição de artefatos indígenas na Praça Matriz, apresentações culturais e roda de conversa."></textarea>
         </div>
         <div class="edit-actions">
             <button class="btn-cancel-ev" onclick="closeEdit()">Cancelar</button>
@@ -1003,15 +999,9 @@ function renderDayEvents(m, d) {
         if (ev.objetivo) {
             html += '<div style="font-size:.92rem;color:var(--text);margin-top:.6rem;line-height:1.7;font-style:italic;">'+ev.objetivo+'</div>';
         }
-        if (ev.atividades) {
-            html += '<div style="margin-top:.8rem;">';
-            html += '<div style="font-size:.72rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">📍 O que vai acontecer</div>';
-            html += '<div style="font-size:.9rem;color:var(--text);line-height:1.6;">'+ev.atividades+'</div>';
-            html += '</div>';
-        }
         if (ev.metodologia) {
             html += '<div style="margin-top:.8rem;background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.18);border-radius:10px;padding:.7rem;">';
-            html += '<div style="font-size:.72rem;font-weight:700;color:var(--red2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">🏛️ Ação SEMTUR</div>';
+            html += '<div style="font-size:.72rem;font-weight:700;color:var(--red2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">📍 O que vai acontecer</div>';
             html += '<div style="font-size:.9rem;color:var(--text);line-height:1.6;">'+ev.metodologia+'</div>';
             html += '</div>';
         }
@@ -1089,7 +1079,6 @@ function openEdit(id) {
     document.getElementById('edit-tipo').value    = ev.tipo||'fixo';
     document.getElementById('edit-obj').value     = ev.objetivo||'';
     document.getElementById('edit-acao').value    = ev.metodologia||'';
-    document.getElementById('edit-atv').value     = ev.atividades||'';
     document.getElementById('edit-modal').classList.add('open');
 }
 function closeEdit() {
@@ -1102,7 +1091,6 @@ function saveEdit() {
     var tipo  = document.getElementById('edit-tipo').value;
     var obj   = document.getElementById('edit-obj').value.trim();
     var acao  = document.getElementById('edit-acao').value.trim();
-    var atv   = document.getElementById('edit-atv').value.trim();
     if (!title) { showToast('O título não pode ser vazio.'); return; }
 
     // Atualizar localmente
@@ -1113,14 +1101,13 @@ function saveEdit() {
         allEvents[idx].tipo       = tipo;
         allEvents[idx].objetivo   = obj;
         allEvents[idx].metodologia= acao;
-        allEvents[idx].atividades = atv;
     }
 
     // Salvar no Firebase
     if (db) {
         db.collection('eventos').doc(id).update({
             title: title, category: cat, tipo: tipo,
-            objetivo: obj, metodologia: acao, atividades: atv
+            objetivo: obj, metodologia: acao
         }).then(function(){
             showToast('✅ Evento salvo com sucesso!');
         }).catch(function(){
