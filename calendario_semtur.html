@@ -388,7 +388,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
 .event-item.var { border-left-color: var(--gold); }
 .event-item:active { background: var(--surface2); transform: scale(.99); }
 .event-item-title {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--white);
     margin-bottom: .3rem;
@@ -976,7 +976,7 @@ function renderDayEvents(m, d) {
         html += '<span class="event-item-badge '+(isVar?'badge-var':'badge-fixo')+'">'+(isVar?'📌 Variável':'📅 Fixo')+'</span>';
         if (ev.category) html += '<span>'+ev.category+'</span>';
         html += '</div>';
-        if (ev.objetivo) html += '<div style="font-size:.78rem;color:var(--muted);margin-top:.35rem;line-height:1.5;">'+ev.objetivo.substring(0,80)+(ev.objetivo.length>80?'…':'')+'</div>';
+        if (ev.objetivo) html += '<div style="font-size:.88rem;color:var(--text);margin-top:.35rem;line-height:1.5;">'+ev.objetivo.substring(0,80)+(ev.objetivo.length>80?'…':'')+'</div>';
         html += '</div>';
     });
     list.innerHTML = html;
