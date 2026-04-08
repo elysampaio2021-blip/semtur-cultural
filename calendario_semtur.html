@@ -638,17 +638,16 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
 <!-- MODAL VISUALIZAÇÃO (usuário) -->
 <div class="modal-overlay" id="view-modal">
     <div class="detail-card">
-        <button class="btn-close-detail" onclick="closeView()">✕ Fechar</button>
+        <button class="btn-close-detail" onclick="closeView()" style="background:var(--red);color:white;border-color:var(--red);font-weight:700;">✕ Fechar</button>
         <div class="detail-handle"></div>
         <div class="detail-date" id="view-date"></div>
         <div class="detail-title" id="view-title"></div>
-        <div id="view-badge" style="margin-bottom:1rem;"></div>
         <hr class="detail-divider">
         <div class="detail-section">
             <div class="detail-value" id="view-curiosidade" style="font-size:.95rem;color:var(--text);line-height:1.7;font-style:italic;"></div>
         </div>
         <div class="detail-section" id="view-atv-wrap" style="margin-top:.8rem;">
-            <div class="detail-label">📍 O que vai acontecer</div>
+            <div class="detail-label" style="color:var(--white);font-size:.78rem;font-weight:700;letter-spacing:.1em;">📍 O QUE VAI ACONTECER</div>
             <div class="detail-value" id="view-atv"></div>
         </div>
         <div class="detail-section" id="view-acao-wrap" style="margin-top:.8rem;">
@@ -994,7 +993,7 @@ function renderDayEvents(m, d) {
     var html = '';
     evs.forEach(function(ev) {
         var isVar = (ev.tipo||'fixo') === 'variavel';
-        html += '<div class="event-item'+(isVar?' var':'')+'" style="cursor:pointer" onclick="showView(\''+ev.id+'\')">';
+        html += '<div class="event-item'+(isVar?' var':'')+'" onclick="showView(\''+ev.id+'\')" style="cursor:pointer">';
         html += '<button class="btn-edit-ev" onclick="event.stopPropagation();requestEdit(\''+ev.id+'\')">✏️ Editar</button>';
         html += '<div class="event-item-title">'+(ev.title||'')+'</div>';
         html += '<div class="event-item-meta">';
@@ -1014,9 +1013,6 @@ function showView(id) {
     var isVar = (ev.tipo||'fixo') === 'variavel';
     document.getElementById('view-title').textContent = ev.title||'';
     document.getElementById('view-date').textContent = (ev.date||'') + ' — ' + MESES[(ev.month||1)-1];
-    document.getElementById('view-badge').innerHTML =
-        '<span class="event-item-badge '+(isVar?'badge-var':'badge-fixo')+'">'+(isVar?'📌 Variável':'📅 Fixo')+'</span>' +
-        (ev.category ? '<span class="event-item-badge" style="background:var(--surface2);color:var(--muted);margin-left:.4rem;">'+ev.category+'</span>' : '');
 
     // Curiosidade / frase sobre o dia
     document.getElementById('view-curiosidade').textContent = ev.objetivo || '';
