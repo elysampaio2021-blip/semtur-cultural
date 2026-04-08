@@ -206,10 +206,12 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
 }
 .month-wday {
     text-align: center;
-    font-size: .72rem;
-    font-weight: 600;
-    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text);
     padding: .2rem 0;
+    text-transform: uppercase;
+    letter-spacing: .05em;
 }
 .month-wday:first-child, .month-wday:last-child { color: var(--red2); }
 .month-days-wrap { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -232,10 +234,10 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
 .month-day-cell.clickable:active { background: var(--surface2); }
 .month-day-cell.empty { background: rgba(0,0,0,.15); }
 .month-day-num {
-    font-size: .92rem;
-    font-weight: 500;
-    color: var(--text);
-    width: 28px; height: 28px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--white);
+    width: 32px; height: 32px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 50%;
     margin: 0 auto;
@@ -247,7 +249,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
 }
 .month-day-cell.has-event .month-day-num { color: var(--white); font-weight: 700; }
 .month-day-cell.sun .month-day-num,
-.month-day-cell.sat .month-day-num { color: var(--red2); font-weight: 500; }
+.month-day-cell.sat .month-day-num { color: var(--red2); font-weight: 600; }
 .month-day-cell.today.sun .month-day-num,
 .month-day-cell.today.sat .month-day-num { color: white; }
 .month-ev-dots { display: flex; justify-content: center; gap: 2px; margin-top: 2px; flex-wrap: wrap; }
