@@ -993,14 +993,28 @@ function renderDayEvents(m, d) {
     var html = '';
     evs.forEach(function(ev) {
         var isVar = (ev.tipo||'fixo') === 'variavel';
-        html += '<div class="event-item'+(isVar?' var':'')+'" onclick="showView(\''+ev.id+'\')" style="cursor:pointer">';
-        html += '<button class="btn-edit-ev" onclick="event.stopPropagation();requestEdit(\''+ev.id+'\')">✏️ Editar</button>';
+        html += '<div class="event-item'+(isVar?' var':'')+'" style="cursor:default">';
+        html += '<button class="btn-edit-ev" onclick="requestEdit(\''+ev.id+'\')">✏️ Editar</button>';
         html += '<div class="event-item-title">'+(ev.title||'')+'</div>';
         html += '<div class="event-item-meta">';
         html += '<span class="event-item-badge '+(isVar?'badge-var':'badge-fixo')+'">'+(isVar?'📌 Variável':'📅 Fixo')+'</span>';
         if (ev.category) html += '<span>'+ev.category+'</span>';
         html += '</div>';
-        if (ev.objetivo) html += '<div style="font-size:.88rem;color:var(--text);margin-top:.35rem;line-height:1.5;">'+ev.objetivo.substring(0,80)+(ev.objetivo.length>80?'…':'')+'</div>';
+        if (ev.objetivo) {
+            html += '<div style="font-size:.92rem;color:var(--text);margin-top:.6rem;line-height:1.7;font-style:italic;">'+ev.objetivo+'</div>';
+        }
+        if (ev.atividades) {
+            html += '<div style="margin-top:.8rem;">';
+            html += '<div style="font-size:.72rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">📍 O que vai acontecer</div>';
+            html += '<div style="font-size:.9rem;color:var(--text);line-height:1.6;">'+ev.atividades+'</div>';
+            html += '</div>';
+        }
+        if (ev.metodologia) {
+            html += '<div style="margin-top:.8rem;background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.18);border-radius:10px;padding:.7rem;">';
+            html += '<div style="font-size:.72rem;font-weight:700;color:var(--red2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem;">🏛️ Ação SEMTUR</div>';
+            html += '<div style="font-size:.9rem;color:var(--text);line-height:1.6;">'+ev.metodologia+'</div>';
+            html += '</div>';
+        }
         html += '</div>';
     });
     list.innerHTML = html;
