@@ -852,8 +852,19 @@ function loadEvents() {
         var firebaseEvents = snapshot.docs.map(function(doc) {
             return Object.assign({ id: doc.id }, doc.data());
         });
-        // Combinar: Firebase tem prioridade, base como fallback
-        allEvents = firebaseEvents.length > 0 ? firebaseEvents : EVENTOS_BASE;
+        // Combinar: Firebase tem prioridade, eventos base preenchem os que faltam
+        var combined = EVENTOS_BASE.slice(); // copia dos eventos base
+        firebaseEvents.forEach(function(fev) {
+            var idx = combined.findIndex(function(b) {
+                return b.month == fev.month && b.date == fev.date && b.title == fev.title;
+            });
+            if (idx > -1) {
+                combined[idx] = Object.assign({}, combined[idx], fev); // Firebase sobrescreve
+            } else {
+                combined.push(fev); // evento novo do Firebase
+            }
+        });
+        allEvents = combined;
         renderYearView();
     }).catch(function() {
         allEvents = EVENTOS_BASE;
