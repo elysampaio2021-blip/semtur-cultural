@@ -635,6 +635,31 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
     <div class="day-events-wrap" id="day-events-list"></div>
 </div>
 
+<!-- MODAL VISUALIZAÇÃO (usuário) -->
+<div class="modal-overlay" id="view-modal">
+    <div class="detail-card">
+        <button class="btn-close-detail" onclick="closeView()">✕ Fechar</button>
+        <div class="detail-handle"></div>
+        <div class="detail-date" id="view-date"></div>
+        <div class="detail-title" id="view-title"></div>
+        <div id="view-badge" style="margin-bottom:1rem;"></div>
+        <hr class="detail-divider">
+        <div class="detail-section">
+            <div class="detail-value" id="view-curiosidade" style="font-size:.95rem;color:var(--text);line-height:1.7;font-style:italic;"></div>
+        </div>
+        <div class="detail-section" id="view-atv-wrap" style="margin-top:.8rem;">
+            <div class="detail-label">📍 O que vai acontecer</div>
+            <div class="detail-value" id="view-atv"></div>
+        </div>
+        <div class="detail-section" id="view-acao-wrap" style="margin-top:.8rem;">
+            <div class="detail-acao">
+                <div class="detail-label">🏛️ Ação SEMTUR</div>
+                <div class="detail-value" id="view-acao"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL SENHA ADMIN -->
 <div id="pwd-modal">
     <div class="pwd-box">
@@ -684,8 +709,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
             </div>
         </div>
         <div class="edit-group">
-            <div class="edit-label">Descrição / Objetivo</div>
-            <textarea id="edit-obj" rows="3" placeholder="Descreva o objetivo do evento..."></textarea>
+            <div class="edit-label">💬 Curiosidade / Frase sobre o dia</div>
+            <textarea id="edit-obj" rows="3" placeholder="Ex: Você sabia que os primeiros habitantes de Ribamar foram os índios Gamelas?"></textarea>
         </div>
         <div class="edit-group">
             <div class="edit-label">Ação SEMTUR</div>
@@ -969,8 +994,8 @@ function renderDayEvents(m, d) {
     var html = '';
     evs.forEach(function(ev) {
         var isVar = (ev.tipo||'fixo') === 'variavel';
-        html += '<div class="event-item'+(isVar?' var':'')+'" style="cursor:default">';
-        html += '<button class="btn-edit-ev" onclick="requestEdit(\''+ev.id+'\')">✏️ Editar</button>';
+        html += '<div class="event-item'+(isVar?' var':'')+'" style="cursor:pointer" onclick="showView(\''+ev.id+'\')">';
+        html += '<button class="btn-edit-ev" onclick="event.stopPropagation();requestEdit(\''+ev.id+'\')">✏️ Editar</button>';
         html += '<div class="event-item-title">'+(ev.title||'')+'</div>';
         html += '<div class="event-item-meta">';
         html += '<span class="event-item-badge '+(isVar?'badge-var':'badge-fixo')+'">'+(isVar?'📌 Variável':'📅 Fixo')+'</span>';
@@ -981,6 +1006,39 @@ function renderDayEvents(m, d) {
     });
     list.innerHTML = html;
 }
+
+/* ===== VISUALIZAÇÃO (usuário) ===== */
+function showView(id) {
+    var ev = allEvents.find(function(e){ return e.id===id; });
+    if (!ev) return;
+    var isVar = (ev.tipo||'fixo') === 'variavel';
+    document.getElementById('view-title').textContent = ev.title||'';
+    document.getElementById('view-date').textContent = (ev.date||'') + ' — ' + MESES[(ev.month||1)-1];
+    document.getElementById('view-badge').innerHTML =
+        '<span class="event-item-badge '+(isVar?'badge-var':'badge-fixo')+'">'+(isVar?'📌 Variável':'📅 Fixo')+'</span>' +
+        (ev.category ? '<span class="event-item-badge" style="background:var(--surface2);color:var(--muted);margin-left:.4rem;">'+ev.category+'</span>' : '');
+
+    // Curiosidade / frase sobre o dia
+    document.getElementById('view-curiosidade').textContent = ev.objetivo || '';
+
+    // O que vai acontecer (atividades)
+    var atvWrap = document.getElementById('view-atv-wrap');
+    if (ev.atividades) {
+        document.getElementById('view-atv').textContent = ev.atividades;
+        atvWrap.style.display = 'block';
+    } else { atvWrap.style.display = 'none'; }
+
+    // Ação SEMTUR
+    var acaoWrap = document.getElementById('view-acao-wrap');
+    var acao = ev.metodologia||'';
+    if (acao) {
+        document.getElementById('view-acao').textContent = acao;
+        acaoWrap.style.display = 'block';
+    } else { acaoWrap.style.display = 'none'; }
+
+    document.getElementById('view-modal').classList.add('open');
+}
+function closeView() { document.getElementById('view-modal').classList.remove('open'); }
 
 /* ===== ADMIN ===== */
 var ADMIN_PWD = '168000';
