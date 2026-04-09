@@ -795,7 +795,6 @@ var EVENTOS_BASE = [
     {id:'e29',month:6,date:'20/06',title:'Dia Nacional do Cinema Brasileiro',category:'artes',tipo:'fixo',objetivo:'Você sabia que o cinema chegou ao Brasil em 1896, apenas um ano após sua invenção? O cinema brasileiro conta histórias únicas do povo nordestino e maranhense para o mundo!',metodologia:''},
     {id:'e30',month:6,date:'24/06',title:'Dia de São João',category:'folclore',tipo:'fixo',objetivo:'Você sabia que as festas juninas são uma das maiores manifestações culturais do Brasil? Em Ribamar, as quadrilhas, forrós e comidas típicas transformam junho no mês mais festivo do ano!',metodologia:''},
     {id:'e31',month:6,date:'29/06',title:'Dia de São Pedro',category:'religioso',tipo:'fixo',objetivo:'Você sabia que São Pedro é o padroeiro dos pescadores? Em Ribamar, cidade banhada pelo mar, a festa de São Pedro celebra a fé e a gratidão dos pescadores que vivem do oceano.',metodologia:''},
-    {id:'e32',month:7,date:'04/07',title:'Lava Bois',category:'folclore',tipo:'variavel',objetivo:'Você sabia que o Lava Bois é uma das festas mais singulares do Maranhão? O ritual de lavar o Bumba-meu-boi com água perfumada marca o início da temporada junina com muita fé e alegria!',metodologia:''},
     {id:'e33',month:7,date:'08/07',title:'Dia Nacional da Ciência e do Pesquisador',category:'civico',tipo:'fixo',objetivo:'Você sabia que o Brasil é o 14º maior produtor científico do mundo? A ciência e a pesquisa são ferramentas poderosas para o desenvolvimento cultural e social de Ribamar!',metodologia:''},
     {id:'e34',month:7,date:'13/07',title:'Dia do Cantor / Dia Mundial do Rock',category:'musica',tipo:'fixo',objetivo:'Você sabia que o rock surgiu nos EUA na década de 1950 misturando blues e jazz? No Maranhão, o rock convive harmoniosamente com o reggae, o forró e o tambor de crioula!',metodologia:''},
     {id:'e35',month:7,date:'25/07',title:'Dia da Mulher Negra / Dia do Escritor',category:'diversidade',tipo:'fixo',objetivo:'Você sabia que Carolina de Jesus, escritora negra de Minas Gerais, é uma das autoras brasileiras mais traduzidas no mundo? As mulheres negras são pilares da cultura e da literatura nacional!',metodologia:''},
@@ -1216,14 +1215,19 @@ function saveEdit() {
         allEvents.push(evData); // novo evento
     }
 
-    // Salvar no Firebase
+    // Salvar no Firebase — set sempre cria ou sobrescreve
     if (db) {
-        var isNew = id.indexOf('new_') === 0;
-        var ref = isNew ? db.collection('eventos').doc() : db.collection('eventos').doc(id);
-        ref.set({ title:title, month:month, date:dateStr, category:cat, tipo:tipo, objetivo:obj, metodologia:acao }, {merge:true})
-        .then(function(){
+        var docId = (id.indexOf('new_') === 0) ? db.collection('eventos').doc().id : id;
+        db.collection('eventos').doc(docId).set({
+            title:title, month:month, date:dateStr,
+            category:cat, tipo:tipo,
+            objetivo:obj, metodologia:acao
+        }).then(function(){
+            var idx2 = allEvents.findIndex(function(e){ return e.id===id; });
+            if (idx2 > -1) allEvents[idx2].id = docId;
             showToast('✅ Evento salvo com sucesso!');
-        }).catch(function(){
+        }).catch(function(err){
+            console.error(err);
             showToast('⚠️ Salvo localmente. Reconecte para sincronizar.');
         });
     } else {
