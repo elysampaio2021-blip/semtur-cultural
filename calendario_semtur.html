@@ -1123,10 +1123,16 @@ function checkPwd() {
     var val = document.getElementById('pwd-input').value;
     if (val === ADMIN_PWD) {
         document.getElementById('pwd-modal').classList.remove('open');
-        if (pendingEditId === '__new__') {
-            openNewEvent(pendingNewMonth, pendingNewDay);
+        var action = pendingEditId;
+        var nm = pendingNewMonth;
+        var nd = pendingNewDay;
+        pendingEditId = null;
+        pendingNewMonth = null;
+        pendingNewDay = null;
+        if (action === '__new__') {
+            openNewEvent(nm, nd);
         } else {
-            openEdit(pendingEditId);
+            openEdit(action);
         }
     } else {
         document.getElementById('pwd-error').style.display = 'block';
@@ -1168,12 +1174,24 @@ function requestEdit(id) {
 function closePwd() {
     document.getElementById('pwd-modal').classList.remove('open');
     pendingEditId = null;
+    pendingNewMonth = null;
+    pendingNewDay = null;
 }
 function checkPwd() {
     var val = document.getElementById('pwd-input').value;
     if (val === ADMIN_PWD) {
         document.getElementById('pwd-modal').classList.remove('open');
-        openEdit(pendingEditId);
+        var action = pendingEditId;
+        var nm = pendingNewMonth;
+        var nd = pendingNewDay;
+        pendingEditId = null;
+        pendingNewMonth = null;
+        pendingNewDay = null;
+        if (action === '__new__') {
+            openNewEvent(nm, nd);
+        } else {
+            openEdit(action);
+        }
     } else {
         document.getElementById('pwd-error').style.display = 'block';
         document.getElementById('pwd-input').value = '';
