@@ -1054,7 +1054,9 @@ function renderDayEvents(m, d) {
     var evs = getEventsForDay(m, d);
     var list = document.getElementById('day-events-list');
     if (evs.length === 0) {
-        list.innerHTML = '<div class="day-no-events"><div class="icon">📭</div><div>Nenhum evento neste dia</div></div>';
+        list.innerHTML = '<div class="day-no-events"><div class="icon">📭</div><div>Nenhum evento neste dia</div>' +
+            '<button class="btn-edit-ev" style="opacity:1;position:static;margin-top:.8rem;font-size:.82rem;padding:.5rem 1rem;" onclick="requestNewEvent('+m+','+d+')">✏️ Adicionar Evento</button>' +
+            '</div>';
         return;
     }
     var html = '';
@@ -1114,6 +1116,37 @@ function closeView() { document.getElementById('view-modal').classList.remove('o
 /* ===== ADMIN ===== */
 var ADMIN_PWD = '168000';
 var pendingEditId = null;
+var pendingNewMonth = null;
+var pendingNewDay = null;
+
+function checkPwd() {
+    var val = document.getElementById('pwd-input').value;
+    if (val === ADMIN_PWD) {
+        document.getElementById('pwd-modal').classList.remove('open');
+        if (pendingEditId === '__new__') {
+            openNewEvent(pendingNewMonth, pendingNewDay);
+        } else {
+            openEdit(pendingEditId);
+        }
+    } else {
+        document.getElementById('pwd-error').style.display = 'block';
+        document.getElementById('pwd-input').value = '';
+        document.getElementById('pwd-input').focus();
+    }
+}
+
+function openNewEvent(m, d) {
+    var newId = 'new_' + Date.now();
+    document.getElementById('edit-id').value      = newId;
+    document.getElementById('edit-title').value   = '';
+    document.getElementById('edit-month').value   = m;
+    document.getElementById('edit-day').value     = d;
+    document.getElementById('edit-category').value= 'neutro';
+    document.getElementById('edit-tipo').value    = 'neutro';
+    document.getElementById('edit-obj').value     = '';
+    document.getElementById('edit-acao').value    = '';
+    document.getElementById('edit-modal').classList.add('open');
+}
 
 function requestEdit(id) {
     pendingEditId = id;
@@ -1176,29 +1209,25 @@ function saveEdit() {
 
     // Atualizar localmente
     var idx = allEvents.findIndex(function(e){ return e.id===id; });
+    var evData = { id:id, title:title, month:month, date:dateStr, category:cat, tipo:tipo, objetivo:obj, metodologia:acao };
     if (idx > -1) {
-        allEvents[idx].title      = title;
-        allEvents[idx].month      = month;
-        allEvents[idx].date       = dateStr;
-        allEvents[idx].category   = cat;
-        allEvents[idx].tipo       = tipo;
-        allEvents[idx].objetivo   = obj;
-        allEvents[idx].metodologia= acao;
+        allEvents[idx] = Object.assign({}, allEvents[idx], evData);
+    } else {
+        allEvents.push(evData); // novo evento
     }
 
     // Salvar no Firebase
     if (db) {
-        db.collection('eventos').doc(id).update({
-            title: title, month: month, date: dateStr,
-            category: cat, tipo: tipo,
-            objetivo: obj, metodologia: acao
-        }).then(function(){
+        var isNew = id.indexOf('new_') === 0;
+        var ref = isNew ? db.collection('eventos').doc() : db.collection('eventos').doc(id);
+        ref.set({ title:title, month:month, date:dateStr, category:cat, tipo:tipo, objetivo:obj, metodologia:acao }, {merge:true})
+        .then(function(){
             showToast('✅ Evento salvo com sucesso!');
         }).catch(function(){
             showToast('⚠️ Salvo localmente. Reconecte para sincronizar.');
         });
     } else {
-        showToast('✅ Alteração salva!');
+        showToast('✅ Evento criado!');
     }
 
     closeEdit();
