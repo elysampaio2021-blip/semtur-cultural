@@ -1148,6 +1148,16 @@ function openNewEvent(m, d) {
     document.getElementById('edit-modal').classList.add('open');
 }
 
+function requestNewEvent(m, d) {
+    pendingEditId = '__new__';
+    pendingNewMonth = m;
+    pendingNewDay = d;
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-error').style.display = 'none';
+    document.getElementById('pwd-modal').classList.add('open');
+    setTimeout(function(){ document.getElementById('pwd-input').focus(); }, 200);
+}
+
 function requestEdit(id) {
     pendingEditId = id;
     document.getElementById('pwd-input').value = '';
@@ -1227,25 +1237,27 @@ function saveEdit() {
     // Formatar data: "06/01"
     var dateStr = (day < 10 ? '0'+day : day) + '/' + (month < 10 ? '0'+month : month);
 
+    // Se é evento do código base (id começa com 'e'), cria novo no Firebase
+    // Se é evento do Firebase ou novo, atualiza/cria normalmente
+    var isBase = /^e\d+$/.test(id);
+    var docId = (id.indexOf('new_') === 0 || isBase) ? db.collection('eventos').doc().id : id;
+
     // Atualizar localmente
     var idx = allEvents.findIndex(function(e){ return e.id===id; });
-    var evData = { id:id, title:title, month:month, date:dateStr, category:cat, tipo:tipo, objetivo:obj, metodologia:acao };
-    if (idx > -1) {
+    var evData = { id:docId, title:title, month:month, date:dateStr, category:cat, tipo:tipo, objetivo:obj, metodologia:acao };
+    if (!isBase && idx > -1) {
         allEvents[idx] = Object.assign({}, allEvents[idx], evData);
     } else {
-        allEvents.push(evData); // novo evento
+        allEvents.push(evData); // novo evento — não modifica o base
     }
 
-    // Salvar no Firebase — set sempre cria ou sobrescreve
+    // Salvar no Firebase
     if (db) {
-        var docId = (id.indexOf('new_') === 0) ? db.collection('eventos').doc().id : id;
         db.collection('eventos').doc(docId).set({
             title:title, month:month, date:dateStr,
             category:cat, tipo:tipo,
             objetivo:obj, metodologia:acao
         }).then(function(){
-            var idx2 = allEvents.findIndex(function(e){ return e.id===id; });
-            if (idx2 > -1) allEvents[idx2].id = docId;
             showToast('✅ Evento salvo com sucesso!');
         }).catch(function(err){
             console.error(err);
