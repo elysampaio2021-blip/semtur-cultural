@@ -747,8 +747,6 @@ var EVENTOS_BASE = [
     {id:'e04',month:1,date:'21/01',title:'Dia de Combate à Intolerância Religiosa',category:'diversidade',tipo:'fixo',objetivo:'Você sabia que o Brasil abriga mais de 100 religiões diferentes? Em Ribamar, a diversidade religiosa é celebrada como patrimônio cultural e espiritual da cidade.',metodologia:''},
     {id:'e05',month:2,date:'02/02',title:'Dia de Iemanjá',category:'religioso',tipo:'fixo',objetivo:'Você sabia que o Dia de Iemanjá é celebrado em toda a costa brasileira? Rainha do Mar, ela é homenageada com flores e oferendas levadas ao oceano por pescadores e devotos de Ribamar.',metodologia:''},
     {id:'e06',month:2,date:'07/02',title:'Dia Nacional de Luta dos Povos Indígenas',category:'diversidade',tipo:'fixo',objetivo:'Você sabia que os primeiros habitantes de São José de Ribamar foram os índios Gamelas? Eles viviam às margens do Rio Bacanga e deixaram marcas profundas na cultura local.',metodologia:''},
-    {id:'e07',month:2,date:'17/02',title:'Carnaval',category:'carnaval',tipo:'variavel',objetivo:'Você sabia que o carnaval brasileiro é reconhecido pela UNESCO como patrimônio cultural? Em Ribamar, os blocos e manifestações culturais colorem a cidade com alegria e identidade!',metodologia:''},
-    {id:'e08',month:2,date:'21/02',title:'Lava-Pratos',category:'folclore',tipo:'variavel',objetivo:'Você sabia que o Lava-Pratos é uma das festas mais tradicionais do Maranhão? Surgiu como uma brincadeira popular e hoje é um dos maiores eventos culturais do Estado!',metodologia:''},
     {id:'e09',month:3,date:'08/03',title:'Dia Internacional da Mulher',category:'diversidade',tipo:'fixo',objetivo:'Você sabia que o Dia Internacional da Mulher surgiu em 1910 em Copenhague? Em Ribamar, as mulheres são protagonistas da cultura, da arte e das tradições da cidade.',metodologia:''},
     {id:'e10',month:3,date:'12/03',title:'Dia do Bibliotecário',category:'literatura',tipo:'fixo',objetivo:'Você sabia que a Biblioteca de Alexandria, na antiguidade, chegou a ter 700 mil volumes? Os bibliotecários são os guardiões do conhecimento e da memória cultural de um povo!',metodologia:''},
     {id:'e11',month:3,date:'19/03',title:'Dia de São José / Dia do Artesão',category:'religioso',tipo:'fixo',objetivo:'Você sabia que São José é o padroeiro dos artesãos e trabalhadores manuais? Em Ribamar, os artesãos locais mantêm viva a tradição das mãos que criam e transformam!',metodologia:''},
@@ -853,15 +851,21 @@ function loadEvents() {
             return Object.assign({ id: doc.id }, doc.data());
         });
         // Combinar: Firebase tem prioridade, eventos base preenchem os que faltam
-        var combined = EVENTOS_BASE.slice(); // copia dos eventos base
+        var combined = EVENTOS_BASE.slice();
         firebaseEvents.forEach(function(fev) {
             var idx = combined.findIndex(function(b) {
-                return b.month == fev.month && b.date == fev.date && b.title == fev.title;
+                return b.month == fev.month && (b.date == fev.date && b.title == fev.title ||
+                       b.id == fev.id);
             });
             if (idx > -1) {
-                combined[idx] = Object.assign({}, combined[idx], fev); // Firebase sobrescreve
+                combined[idx] = Object.assign({}, combined[idx], fev);
             } else {
-                combined.push(fev); // evento novo do Firebase
+                // Verificar se não é duplicata pelo título no mesmo mês e data
+                var isDup = combined.some(function(b) {
+                    return b.month == fev.month && b.date == fev.date &&
+                           b.title.toLowerCase() === (fev.title||'').toLowerCase();
+                });
+                if (!isDup) combined.push(fev);
             }
         });
         allEvents = combined;
