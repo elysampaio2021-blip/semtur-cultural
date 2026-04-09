@@ -742,6 +742,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
         </div>
         <div class="edit-actions">
             <button class="btn-cancel-ev" onclick="closeEdit()">Cancelar</button>
+            <button class="btn-save-ev" style="background:var(--red2);flex:0;padding:.85rem 1.2rem;" onclick="deleteEdit()">🗑️</button>
             <button class="btn-save-ev" onclick="saveEdit()">💾 Salvar</button>
         </div>
     </div>
@@ -1188,6 +1189,27 @@ function openEdit(id) {
     document.getElementById('edit-acao').value    = ev.metodologia||'';
     document.getElementById('edit-modal').classList.add('open');
 }
+function deleteEdit() {
+    var id = document.getElementById('edit-id').value;
+    if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+
+    // Remover localmente
+    allEvents = allEvents.filter(function(e){ return e.id !== id; });
+
+    // Remover do Firebase
+    if (db) {
+        db.collection('eventos').doc(id).delete()
+        .then(function(){ showToast('🗑️ Evento excluído!'); })
+        .catch(function(){ showToast('⚠️ Removido localmente. Reconecte para sincronizar.'); });
+    } else {
+        showToast('🗑️ Evento excluído!');
+    }
+
+    closeEdit();
+    renderDayEvents(currentMonth, currentDay);
+    renderYearView();
+}
+
 function closeEdit() {
     document.getElementById('edit-modal').classList.remove('open');
 }
@@ -1201,7 +1223,6 @@ function saveEdit() {
     var obj   = document.getElementById('edit-obj').value.trim();
     var acao  = document.getElementById('edit-acao').value.trim();
     if (!title) { showToast('O título não pode ser vazio.'); return; }
-    if (!day || day < 1 || day > 31) { showToast('Informe um dia válido.'); return; }
 
     // Formatar data: "06/01"
     var dateStr = (day < 10 ? '0'+day : day) + '/' + (month < 10 ? '0'+month : month);
