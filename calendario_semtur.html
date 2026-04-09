@@ -686,8 +686,32 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
         </div>
         <div class="edit-row">
             <div class="edit-group">
+                <div class="edit-label">Mês</div>
+                <select id="edit-month">
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div class="edit-group">
+                <div class="edit-label">Dia</div>
+                <input type="number" id="edit-day" min="1" max="31" placeholder="Ex: 24" style="text-align:center;">
+            </div>
+        </div>
+        <div class="edit-row">
+            <div class="edit-group">
                 <div class="edit-label">Categoria</div>
                 <select id="edit-category">
+                    <option value="neutro">— Neutro</option>
                     <option value="folclore">Folclore</option>
                     <option value="religioso">Religioso</option>
                     <option value="literatura">Literatura</option>
@@ -702,6 +726,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
             <div class="edit-group">
                 <div class="edit-label">Tipo</div>
                 <select id="edit-tipo">
+                    <option value="neutro">— Neutro</option>
                     <option value="fixo">📅 Fixo</option>
                     <option value="variavel">📌 Variável</option>
                 </select>
@@ -1121,8 +1146,12 @@ function openEdit(id) {
     if (!ev) return;
     document.getElementById('edit-id').value      = ev.id;
     document.getElementById('edit-title').value   = ev.title||'';
-    document.getElementById('edit-category').value= ev.category||'folclore';
-    document.getElementById('edit-tipo').value    = ev.tipo||'fixo';
+    document.getElementById('edit-month').value   = ev.month||1;
+    // Extrair dia do campo date (ex: "24/09" → 24)
+    var dayNum = ev.date ? parseInt(ev.date.split('/')[0]) : '';
+    document.getElementById('edit-day').value     = dayNum||'';
+    document.getElementById('edit-category').value= ev.category||'neutro';
+    document.getElementById('edit-tipo').value    = ev.tipo||'neutro';
     document.getElementById('edit-obj').value     = ev.objetivo||'';
     document.getElementById('edit-acao').value    = ev.metodologia||'';
     document.getElementById('edit-modal').classList.add('open');
@@ -1133,16 +1162,24 @@ function closeEdit() {
 function saveEdit() {
     var id    = document.getElementById('edit-id').value;
     var title = document.getElementById('edit-title').value.trim();
+    var month = parseInt(document.getElementById('edit-month').value);
+    var day   = parseInt(document.getElementById('edit-day').value);
     var cat   = document.getElementById('edit-category').value;
     var tipo  = document.getElementById('edit-tipo').value;
     var obj   = document.getElementById('edit-obj').value.trim();
     var acao  = document.getElementById('edit-acao').value.trim();
     if (!title) { showToast('O título não pode ser vazio.'); return; }
+    if (!day || day < 1 || day > 31) { showToast('Informe um dia válido.'); return; }
+
+    // Formatar data: "06/01"
+    var dateStr = (day < 10 ? '0'+day : day) + '/' + (month < 10 ? '0'+month : month);
 
     // Atualizar localmente
     var idx = allEvents.findIndex(function(e){ return e.id===id; });
     if (idx > -1) {
         allEvents[idx].title      = title;
+        allEvents[idx].month      = month;
+        allEvents[idx].date       = dateStr;
         allEvents[idx].category   = cat;
         allEvents[idx].tipo       = tipo;
         allEvents[idx].objetivo   = obj;
@@ -1152,7 +1189,8 @@ function saveEdit() {
     // Salvar no Firebase
     if (db) {
         db.collection('eventos').doc(id).update({
-            title: title, category: cat, tipo: tipo,
+            title: title, month: month, date: dateStr,
+            category: cat, tipo: tipo,
             objetivo: obj, metodologia: acao
         }).then(function(){
             showToast('✅ Evento salvo com sucesso!');
